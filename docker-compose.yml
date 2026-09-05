@@ -1,0 +1,91 @@
+# Local development stack. From an empty machine:
+#   1. cp .env.example .env
+#   2. docker compose up --build
+#   3. open http://localhost:5173   (API docs: http://localhost:8000/docs)
+#
+# Matches roadmap M0: api + worker + postgres + redis (frontend added here for
+# a one-command local run — it is deployed separately to Cloudflare Pages).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: orbitlink
+      POSTGRES_PASSWORD: orbitlink
+      POSTGRES_DB: orbitlink
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orbitlink"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./backend
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      ENVIRONMENT: development
+      DEBUG: "true"
+      DATABASE_URL: postgresql+psycopg://orbitlink:orbitlink@postgres:5432/orbitlink
+      REDIS_URL: redis://redis:6379/0
+      CORS_ORIGINS: '["http://localhost:5173"]'
+      JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-change-me}
+      PSEUDONYM_KEY: ${PSEUDONYM_KEY:-dev-only-insecure-change-me}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: ./backend
+    command: python -m app.jobs.worker
+    environment:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+psycopg://orbitlink:orbitlink@postgres:5432/orbitlink
+      REDIS_URL: redis://redis:6379/0
+      PSEUDONYM_KEY: ${PSEUDONYM_KEY:-dev-only-insecure-change-me}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      VITE_API_BASE_URL: ""
+      DEV_API_PROXY_TARGET: "http://api:8000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

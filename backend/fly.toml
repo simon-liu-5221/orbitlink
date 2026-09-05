@@ -1,0 +1,43 @@
+# Fly.io deployment for the OrbitLink backend.
+# Runs two process groups from one image: the API and the RQ worker.
+# Set secrets with:  fly secrets set DATABASE_URL=... REDIS_URL=... JWT_SECRET=... PSEUDONYM_KEY=... YOUTUBE_API_KEY=...
+# App name is a placeholder — change it and run `fly launch --no-deploy` once.
+
+app = "orbitlink-api"
+primary_region = "sin"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  ENVIRONMENT = "production"
+  RQ_QUEUE_NAME = "orbitlink"
+
+[processes]
+  app = "sh -c 'alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000'"
+  worker = "python -m app.jobs.worker"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "off"   # avoid cold starts during demos (ADR-0001)
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[[http_service.checks]]
+  method = "GET"
+  path = "/healthz"
+  interval = "15s"
+  timeout = "3s"
+  grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  processes = ["app"]
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "2048mb"   # room for the NLP models loaded in M2/ADR-0004
+  processes = ["worker"]
