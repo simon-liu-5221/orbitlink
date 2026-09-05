@@ -17,11 +17,16 @@
 - [x] GitHub Actions：ruff、ruff format、mypy、import-linter、alembic、pytest、vitest、build
 - [ ] 後端部署到 Fly.io，前端到 Cloudflare Pages，DB 到 Neon，Redis 到 Upstash（見 `docs/deployment.md`，需帳號）
 - [x] `.env.example` 與 secrets 設定（root + frontend）
-- [ ] `uv lock` 產生並 commit `backend/uv.lock`（需 Python 3.12 + uv 環境）
+- [x] `uv lock` 產生並 commit `backend/uv.lock`
+- [x] 本機 `docker compose up` 全套跑通：5 個 container、`/healthz` 回 `ok`、前端經 Vite proxy 打到 API、worker 監聽 `orbitlink` queue、`alembic upgrade head` 套用 `0001_baseline`
+- [x] 本機 CI 檢查全綠：`ruff` / `ruff format` / `mypy` / `lint-imports` / `pytest`（6 passed，含 2 integration）/ 前端 `typecheck` / `vitest`（2 passed）/ `build`
+- [ ] 後端部署到 Fly.io，前端到 Cloudflare Pages，DB 到 Neon，Redis 到 Upstash（見 `docs/deployment.md`，需帳號）
+- [ ] push 到 GitHub 確認 Actions 全綠
 
 **驗收**：production URL 打開能看到頁面，頁面顯示後端健康狀態。CI 全綠。
 
-> 進度：本機骨架與 CI 設定完成。雲端四項服務與 `uv.lock` 待在有 Python 3.12 / uv / Docker 的環境完成，步驟見 `docs/deployment.md`。
+> 進度：本機骨架、compose 全套、CI 檢查全部驗證通過。剩雲端四項服務（Neon / Upstash / Fly / Cloudflare）與 push GitHub，步驟見 `docs/deployment.md`。
+> 註：compose 把 Postgres / Redis 發佈在 host 的 55432 / 56379（避開本機已安裝的 PostgreSQL 16）；container 之間仍是 5432 / 6379。
 
 > 這一週看起來沒有功能，但它是整個專案能不能收尾的關鍵。原 FYP 沒有這一步，所以測試只能在 localhost 手動做。
 

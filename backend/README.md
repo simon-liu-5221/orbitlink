@@ -5,7 +5,7 @@ FastAPI + SQLAlchemy + Alembic + RQ. Package manager: [uv](https://docs.astral.s
 ## Local dev (without Docker)
 
 ```bash
-uv sync --dev
+uv sync
 uv run alembic upgrade head          # needs a reachable Postgres
 uv run uvicorn app.main:app --reload
 uv run rq worker orbitlink           # or: uv run python -m app.jobs.worker
@@ -15,8 +15,19 @@ uv run rq worker orbitlink           # or: uv run python -m app.jobs.worker
 
 ```bash
 uv run pytest -m "not integration"   # offline: no DB / Redis needed
-uv run pytest                        # full: needs Postgres + Redis
 uv run pytest --cov=app --cov-report=term-missing
+```
+
+Integration tests need Postgres + Redis. Easiest is the compose stack, which
+publishes them on non-standard host ports (to avoid clashing with a locally
+installed PostgreSQL / Redis):
+
+```bash
+docker compose up -d postgres redis           # from the repo root
+export DATABASE_URL="postgresql+psycopg://orbitlink:orbitlink@localhost:55432/orbitlink"
+export REDIS_URL="redis://localhost:56379/0"
+uv run alembic upgrade head
+uv run pytest                                  # full suite
 ```
 
 ## Checks (same as CI)

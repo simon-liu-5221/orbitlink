@@ -15,12 +15,13 @@ python -c "import secrets; print('JWT_SECRET=' + secrets.token_urlsafe(32))"
 python -c "import secrets; print('PSEUDONYM_KEY=' + secrets.token_urlsafe(32))"
 ```
 
-本機先確認整套跑得起來：
+本機先確認整套跑得起來（已在開發機驗證通過）：
 
 ```bash
 docker compose up --build
 # http://localhost:5173      → 前端，應顯示 database/redis 兩顆綠燈
 # http://localhost:8000/docs → API 文件
+# host 上 Postgres = localhost:55432，Redis = localhost:56379（避開本機 PostgreSQL 16）
 ```
 
 安裝 CLI：
@@ -109,10 +110,11 @@ UptimeRobot 加一個 monitor 打 `https://orbitlink-api.fly.dev/healthz`，5 �
 
 ## 待辦（M0 收尾）
 
-- [ ] 本機 `docker compose up` 兩顆綠燈
-- [ ] `uv lock` 產生並 commit `backend/uv.lock`（可重現建置）
+- [x] 本機 `docker compose up` 兩顆綠燈（已驗證）
+- [x] `uv lock` 產生並 commit `backend/uv.lock`
+- [x] 本機 CI 檢查全綠（ruff / mypy / lint-imports / pytest / vitest / build）
+- [ ] GitHub repo 建立並 push，Actions 全綠
 - [ ] Neon / Upstash / Fly / Cloudflare 四項設定完成
 - [ ] production URL 顯示健康狀態
-- [ ] GitHub Actions 全綠
 - [ ] UptimeRobot monitor 啟用
-- [ ] roadmap.md 的 M0 checklist 打勾
+- [x] roadmap.md 的 M0 checklist 更新

@@ -14,7 +14,9 @@ services:
       POSTGRES_PASSWORD: orbitlink
       POSTGRES_DB: orbitlink
     ports:
-      - "5432:5432"
+      # Host port 55432 to avoid clashing with a locally-installed PostgreSQL.
+      # Inside the compose network the port is still 5432 (host "postgres").
+      - "55432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -26,7 +28,8 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      # Host port 56379 to avoid clashing with a local Redis/Memurai.
+      - "56379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -35,6 +38,7 @@ services:
 
   api:
     build: ./backend
+    restart: unless-stopped
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
       ENVIRONMENT: development
@@ -47,6 +51,7 @@ services:
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
     volumes:
       - ./backend:/app
+      - /app/.venv          # keep the image's Linux venv, not the host's
     ports:
       - "8000:8000"
     depends_on:
@@ -57,6 +62,7 @@ services:
 
   worker:
     build: ./backend
+    restart: unless-stopped
     command: python -m app.jobs.worker
     environment:
       ENVIRONMENT: development
@@ -66,6 +72,7 @@ services:
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
     volumes:
       - ./backend:/app
+      - /app/.venv          # keep the image's Linux venv, not the host's
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,7 +82,7 @@ services:
   frontend:
     image: node:22-alpine
     working_dir: /app
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
     environment:
       VITE_API_BASE_URL: ""
       DEV_API_PROXY_TARGET: "http://api:8000"

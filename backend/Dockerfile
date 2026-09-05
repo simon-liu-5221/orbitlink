@@ -11,16 +11,14 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 WORKDIR /app
 
-# Install dependencies first for layer caching. uv.lock is optional (falls back
-# to resolving from pyproject.toml if it is not committed yet).
-COPY pyproject.toml ./
-COPY uv.lock* ./
+# Install dependencies first for layer caching.
+COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-install-project --no-dev
+    uv sync --frozen --no-install-project --no-dev
 
 COPY . .
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-dev
+    uv sync --frozen --no-dev
 
 # ---- runtime -----------------------------------------------------------
 FROM python:3.12-slim AS runtime

@@ -34,7 +34,7 @@ def _check_database() -> DependencyState:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         return "up"
-    except Exception:  # noqa: BLE001 — health check must never raise
+    except Exception:
         return "down"
 
 
@@ -44,7 +44,7 @@ def _check_redis() -> DependencyState:
         client = redis.Redis.from_url(settings.redis_url, socket_connect_timeout=2)
         client.ping()
         return "up"
-    except Exception:  # noqa: BLE001
+    except Exception:
         return "down"
 
 

@@ -6,10 +6,9 @@ migrations applied (``alembic upgrade head``).
 """
 
 import pytest
+from app.db.session import engine
 from fastapi.testclient import TestClient
 from sqlalchemy import inspect
-
-from app.db.session import engine
 
 pytestmark = pytest.mark.integration
 

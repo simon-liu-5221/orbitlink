@@ -68,6 +68,7 @@ omit = ["app/db/migrations/*", "alembic/*"]
 
 [tool.importlinter]
 root_package = "app"
+include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "analysis layer is pure (no db / api / io imports)"
