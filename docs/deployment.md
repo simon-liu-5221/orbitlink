@@ -2,119 +2,116 @@
 
 M0 的目標：production URL 打開能看到頁面，頁面顯示後端健康狀態，CI 全綠。
 
-程式骨架、`docker-compose.yml`、CI 已經在 repo 裡。以下是需要**你的帳號**才能完成的雲端設定，照順序做。
+平台（見 ADR-0001 的 M0 更新，全部免綁信用卡）：
+
+| 元件 | 平台 | 帳號 |
+|---|---|---|
+| 後端 API | Render free web service（Docker） | 需註冊（GitHub 登入） |
+| 前端 | Render free static site | 同上 |
+| PostgreSQL | Neon free | 作者已有 |
+| Redis | Upstash free | 需註冊（GitHub 登入） |
+| RQ worker | 不部署（M2 再說） | — |
+
+程式骨架、`render.yaml`、CI 已在 repo 裡。以下照順序做。
 
 ---
 
-## 0. 前置
+## 0. 本機確認（已驗證通過）
 
 ```bash
 cp .env.example .env
-# 產生真正的秘密（deploy 用，不要用 dev 預設值）
-python -c "import secrets; print('JWT_SECRET=' + secrets.token_urlsafe(32))"
-python -c "import secrets; print('PSEUDONYM_KEY=' + secrets.token_urlsafe(32))"
-```
-
-本機先確認整套跑得起來（已在開發機驗證通過）：
-
-```bash
 docker compose up --build
-# http://localhost:5173      → 前端，應顯示 database/redis 兩顆綠燈
-# http://localhost:8000/docs → API 文件
-# host 上 Postgres = localhost:55432，Redis = localhost:56379（避開本機 PostgreSQL 16）
-```
-
-安裝 CLI：
-
-```bash
-# Fly.io
-curl -L https://fly.io/install.sh | sh      # Windows: iwr https://fly.io/install.ps1 -useb | iex
-fly auth login
-
-# Cloudflare（前端用 Pages，可用 dashboard 或 wrangler）
-npm i -g wrangler && wrangler login
+# http://localhost:5173 顯示 database/redis 兩顆綠燈
 ```
 
 ---
 
-## 1. 資料庫 — Neon
+## 1. PostgreSQL — Neon
 
-1. https://neon.tech 建一個 project（region 選 Singapore）。
-2. 複製 connection string，改成 psycopg v3 格式：
-   `postgresql+psycopg://USER:PASSWORD@HOST/DB?sslmode=require`
-3. 先留著，第 3 步設進 Fly secrets。
+1. https://console.neon.tech → New Project
+2. 名稱 `orbitlink`，region 選 **Singapore**（`ap-southeast-1`）
+3. Dashboard → Connection string，複製，並改成 psycopg v3 格式：
+   - 原始：`postgresql://user:pwd@ep-xxx.ap-southeast-1.aws.neon.tech/orbitlink?sslmode=require`
+   - 改成：`postgresql+psycopg://user:pwd@ep-xxx.ap-southeast-1.aws.neon.tech/orbitlink?sslmode=require`
+     （只加 `+psycopg`）
+4. 留著，第 4 步貼進 Render。
 
 ## 2. Redis — Upstash
 
-1. https://upstash.com 建一個 Redis database（region 同上，選 **TLS enabled**）。
-2. 複製 `rediss://…` URL（注意是兩個 s）。
+1. https://console.upstash.com → 用 GitHub 登入
+2. Create Database → 名稱 `orbitlink`，Type **Regional**，Region 選最接近的（`ap-southeast-1` / Singapore），**TLS/SSL 開啟**
+3. 資料庫頁面 → 往下找 **`UPSTASH_REDIS_URL`** 或 "Redis Connect" 的 `rediss://` 連線字串（注意是兩個 s）
+   - 形如 `rediss://default:xxxxxxxx@apn1-xxx.upstash.io:6379`
+4. 留著。
 
-## 3. 後端 — Fly.io
+## 3. Render 帳號
 
-`backend/fly.toml` 已備好，app 名稱是 placeholder `orbitlink-api`。
+1. https://dashboard.render.com → Get Started → **Sign in with GitHub**
+2. 授權 Render 存取 `simon-liu-5221/orbitlink`（可選 only select repositories）
+
+## 4. 用 Blueprint 建立服務
+
+1. Render dashboard → **New +** → **Blueprint**
+2. 選 `simon-liu-5221/orbitlink` repo → Render 讀取 `render.yaml`，會列出 `orbitlink-api`（web）與 `orbitlink-web`（static）
+3. 按 **Apply**。它會要你填 `sync: false` 的環境變數：
+
+   **orbitlink-api：**
+   | key | value |
+   |---|---|
+   | `DATABASE_URL` | 第 1 步的 Neon 字串（含 `+psycopg`） |
+   | `REDIS_URL` | 第 2 步的 Upstash `rediss://` 字串 |
+   | `CORS_ORIGINS` | 先填 `["https://orbitlink-web.onrender.com"]`（正確網域第 5 步確認後回來改） |
+   | `YOUTUBE_API_KEY` | 留空 |
+
+   `JWT_SECRET` / `PSEUDONYM_KEY` 由 Render 自動產生（`generateValue`），不用填。
+
+   **orbitlink-web：**
+   | key | value |
+   |---|---|
+   | `VITE_API_BASE_URL` | `https://orbitlink-api.onrender.com`（第 5 步確認實際網域） |
+
+4. Apply 後 Render 開始 build。API 第一次 build（Docker + uv sync）約 3–5 分鐘。
+
+## 5. 確認網域並修正交叉引用
+
+Blueprint 套用後，每個 service 的實際網域在其 dashboard 頁面（通常就是 `orbitlink-api.onrender.com` / `orbitlink-web.onrender.com`，若名稱被占用會加隨機字尾）。
+
+1. 記下 API 與 web 的實際 URL
+2. 若和上面預設不同：
+   - `orbitlink-api` → Environment → 改 `CORS_ORIGINS` 成實際的 web URL（JSON 陣列）
+   - `orbitlink-web` → Environment → 改 `VITE_API_BASE_URL` 成實際的 API URL → Manual Deploy（static site 環境變數是 build 時注入，改完要重 build）
+3. 兩邊都 redeploy
+
+## 6. 驗收
 
 ```bash
-cd backend
-fly launch --no-deploy --copy-config --name orbitlink-api --region sin
-
-fly secrets set \
-  DATABASE_URL="postgresql+psycopg://…?sslmode=require" \
-  REDIS_URL="rediss://…" \
-  JWT_SECRET="…" \
-  PSEUDONYM_KEY="…" \
-  YOUTUBE_API_KEY=""     # M2 再填
-
-fly deploy
+curl https://orbitlink-api.onrender.com/healthz
+# 首次可能等 ~50s（冷啟動），應回：
+# {"status":"ok","version":"0.1.0","environment":"production","dependencies":{"database":"up","redis":"up"}}
 ```
 
-`fly.toml` 定義了兩個 process group：`app`（API，跑 migration 後啟動 uvicorn）與 `worker`（RQ）。部署後：
+瀏覽器打開 `https://orbitlink-web.onrender.com` → 應顯示 OrbitLink 頁面與 database / redis 兩顆綠燈。
 
-```bash
-fly scale count app=1 worker=1
-fly status
-curl https://orbitlink-api.fly.dev/healthz     # 應回 {"status":"ok",...}
-```
+## 7. 監控
 
-## 4. 前端 — Cloudflare Pages
-
-Dashboard → Workers & Pages → Create → Pages → Connect to Git：
-
-| 設定 | 值 |
-|---|---|
-| Framework preset | Vite |
-| Build command | `npm run build` |
-| Build output directory | `frontend/dist` |
-| Root directory | `frontend` |
-| Environment variable | `VITE_API_BASE_URL = https://orbitlink-api.fly.dev` |
-
-部署後打開 `*.pages.dev`，應該看到 M0 頁面與兩顆綠燈。
-
-回頭把該網域加進後端 CORS：
-
-```bash
-fly secrets set CORS_ORIGINS='["https://orbitlink.pages.dev"]' -a orbitlink-api
-```
-
-## 5. CI secrets（GitHub）
-
-M0 的 CI 只跑 lint / test / build，不需要 secrets。若之後要加自動部署（M0 選項未啟用），需要：
-
-- `FLY_API_TOKEN`（`fly tokens create deploy`）
-- `CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`
-
-## 6. 監控
-
-UptimeRobot 加一個 monitor 打 `https://orbitlink-api.fly.dev/healthz`，5 分鐘間隔（AVAIL-01）。
+UptimeRobot（https://uptimerobot.com，免綁卡）→ 新增 HTTP(s) monitor：
+- URL `https://orbitlink-api.onrender.com/healthz`
+- 間隔 5 分鐘（順便當保溫，減少冷啟動）
 
 ---
 
+## CI 的自動部署
+
+Render 的 `autoDeploy: true` 已經處理：push 到 `main` → Render 自動重新 build 部署。GitHub Actions 只負責 lint / test / build，不碰部署，不需要額外 secret。
+
 ## 待辦（M0 收尾）
 
-- [x] 本機 `docker compose up` 兩顆綠燈（已驗證）
-- [x] `uv lock` 產生並 commit `backend/uv.lock`
-- [x] 本機 CI 檢查全綠（ruff / mypy / lint-imports / pytest / vitest / build）
-- [ ] GitHub repo 建立並 push，Actions 全綠
-- [ ] Neon / Upstash / Fly / Cloudflare 四項設定完成
-- [ ] production URL 顯示健康狀態
-- [ ] UptimeRobot monitor 啟用
-- [x] roadmap.md 的 M0 checklist 更新
+- [x] 本機 `docker compose up`
+- [x] `uv.lock` committed
+- [x] push GitHub + Actions 全綠
+- [ ] Neon project 建立，連線字串取得
+- [ ] Upstash Redis 建立，`rediss://` 取得
+- [ ] Render Blueprint apply，兩個 service 綠
+- [ ] `curl …/healthz` 回 `status: ok`
+- [ ] web URL 瀏覽器打開顯示兩顆綠燈
+- [ ] UptimeRobot monitor

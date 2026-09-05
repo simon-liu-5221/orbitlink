@@ -3,7 +3,7 @@
  *
  * In dev, requests are same-origin and Vite proxies them to FastAPI. In
  * production the deployed API origin is provided via VITE_API_BASE_URL
- * (set at build time on Cloudflare Pages).
+ * (set at build time on the Render static site).
  */
 
 export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";

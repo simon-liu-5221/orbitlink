@@ -25,7 +25,7 @@ OrbitLink：YouTube 留言網路分析工具。使用者貼上一個頻道或影
 | 樣式 | Tailwind CSS |
 | 圖形視覺化 | Cytoscape.js |
 | 圖表 | Recharts |
-| 部署 | Docker；後端 Fly.io、前端 Cloudflare Pages、DB Neon、Redis Upstash |
+| 部署 | Docker；後端 + 前端 Render free、DB Neon、Redis Upstash（原訂 Fly.io + Cloudflare，見 ADR-0001 M0 更新） |
 | CI | GitHub Actions |
 
 決策理由寫在 `docs/adr/`。要改棧就先改 ADR。

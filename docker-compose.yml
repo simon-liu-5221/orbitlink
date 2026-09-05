@@ -4,7 +4,7 @@
 #   3. open http://localhost:5173   (API docs: http://localhost:8000/docs)
 #
 # Matches roadmap M0: api + worker + postgres + redis (frontend added here for
-# a one-command local run — it is deployed separately to Cloudflare Pages).
+# a one-command local run — in production it is a separate Render static site).
 
 services:
   postgres:

@@ -1,0 +1,63 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# Provisions the M0 stack:
+#   - orbitlink-api : FastAPI (Docker), free web service
+#   - orbitlink-web : the Vite build, free static site
+#
+# Postgres is external (Neon) and Redis is external (Upstash); their URLs are
+# set as dashboard secrets (envVars with `sync: false`). The RQ worker is not
+# deployed yet — it arrives in M2 (see the commented block below).
+
+services:
+  - type: web
+    name: orbitlink-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: RQ_QUEUE_NAME
+        value: orbitlink
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PSEUDONYM_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false          # Neon: postgresql+psycopg://USER:PWD@HOST/DB?sslmode=require
+      - key: REDIS_URL
+        sync: false          # Upstash: rediss://default:PWD@HOST:PORT
+      - key: CORS_ORIGINS
+        sync: false          # ["https://orbitlink-web.onrender.com"]
+      - key: YOUTUBE_API_KEY
+        sync: false          # blank until M2
+
+  - type: web
+    name: orbitlink-web
+    runtime: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: ./frontend/dist
+    autoDeploy: true
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false          # https://orbitlink-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+# --- M2: RQ worker (uncomment when the job pipeline lands) --------------------
+#  - type: worker
+#    name: orbitlink-worker
+#    runtime: docker
+#    plan: starter            # workers have no free plan on Render
+#    dockerfilePath: ./backend/Dockerfile
+#    dockerContext: ./backend
+#    dockerCommand: python -m app.jobs.worker
+#    envVars:
+#      - fromService: { type: web, name: orbitlink-api, envVarKey: DATABASE_URL }
+#      - fromService: { type: web, name: orbitlink-api, envVarKey: REDIS_URL }

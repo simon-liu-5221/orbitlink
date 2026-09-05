@@ -35,12 +35,21 @@ TypeScript 是硬要求：分析結果的資料結構深，沒有型別會不斷
 
 D3 是通用視覺化函式庫，畫網路圖要自己實作力導向佈局、縮放、節點選取、效能最佳化。Cytoscape.js 專門為圖形而生，內建多種佈局演算法（cose-bilkent、fcose）、事件系統與 2000+ 節點的效能處理。省下的時間拿去做分析本身。
 
-### 部署：Fly.io（後端）+ Cloudflare Pages（前端）
+### 部署：Render（後端 + 前端）、Neon（Postgres）、Upstash（Redis）
 
-原專案用 Render，free tier 會冷啟動休眠，示範時第一次請求要等 50 秒。Fly.io 可以設定最小機器數避免休眠，且原生支援跑多個 process（api + worker）。
+**更新（M0，2026-09）**：原訂 Fly.io + Cloudflare Pages。Fly.io 現在即使 free tier 也要求綁信用卡，本專案作者不願綁卡，故改用 Render 的免費方案：
+
+- **後端 API**：Render free web service（Docker）。缺點是 15 分鐘無流量會休眠、冷啟動約 50 秒——這正是當初想避開的問題。取捨理由：M0/M1 階段沒有真實使用者，冷啟動可接受；demo 前（M8）再視情況升級到付費 instance 或改回 Fly.io。`docs/nfr.md` 的 AVAIL-01 因此在雲端層面暫時達不到，已於該文件標記。
+- **前端**：Render free static site（Vite build，SPA rewrite 到 `index.html`）。
+- **RQ worker**：Render 的 worker 沒有免費方案，故 M0 不部署 worker（M0 只需 API 回報健康）。M2 job 管線落地時，worker 用 Render `starter`（付費）或改回 Fly.io，屆時一併重評此 ADR。
+- **Postgres**：Neon free（作者已有帳號）。**Redis**：Upstash free（GitHub 登入、免綁卡、TLS）。
+
+基礎設施即程式碼：`render.yaml`（Render Blueprint）定義兩個 service 與需要的環境變數；DB / Redis 連線字串為 dashboard secret（`sync: false`），不進 git。
 
 ## 後果
 
 - 需要維護 Docker Compose 讓本機環境可重現
 - 前端型別必須由 OpenAPI 產生，API 改動時要記得重跑 `npm run gen:api`
 - Postgres + Redis + 兩個部署目標，比單一 Firebase 專案複雜，換來的是可測試性與 SQL 能力的展示
+- Render free 冷啟動：production 的 `/healthz` 首次請求可能等 ~50 秒；監控（UptimeRobot）的定期打點剛好也能當保溫
+- worker 暫不部署，雲端無法端到端跑分析 job，直到 M2 決定 worker 的付費/搬遷方案

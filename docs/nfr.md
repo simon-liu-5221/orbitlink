@@ -12,7 +12,7 @@
 | PERF-02 | 1,000 則留言的完整分析 p95 < 45 秒 | worker 端計時，30 次取樣 | |
 | PERF-03 | 10,000 則留言的完整分析 p95 < 6 分鐘 | 同上，10 次取樣 | |
 | PERF-04 | 網路圖在 2,000 節點下互動維持 ≥ 30 fps | Chrome DevTools Performance，記錄拖曳 10 秒 | |
-| PERF-05 | 首屏 LCP < 2.5s（Cloudflare Pages，4G 節流） | Lighthouse CI | |
+| PERF-05 | 首屏 LCP < 2.5s（Render static site，4G 節流） | Lighthouse CI | |
 | PERF-06 | 情緒推論吞吐 ≥ 80 則/秒（單 CPU worker，batch 32） | 基準測試腳本 | |
 
 ## 容量
@@ -27,7 +27,7 @@
 
 | ID | 目標 | 量測方式 | 實測 |
 |---|---|---|---|
-| AVAIL-01 | 月可用度 ≥ 99.0%（不含計畫內維護） | UptimeRobot 監控 `/healthz` | |
+| AVAIL-01 | 月可用度 ≥ 99.0%（不含計畫內維護） | UptimeRobot 監控 `/healthz` | 暫緩：Render free 15 分鐘休眠 + ~50s 冷啟動，達不到。見 ADR-0001 更新，demo 前升級 instance 才重新量測 |
 | AVAIL-02 | worker 崩潰後 job 不遺失，重啟 60 秒內恢復處理 | 混沌測試：跑分析中 kill worker | |
 | AVAIL-03 | 每日資料庫備份，RPO 24 小時，還原演練每季一次 | Neon 自動備份 + 手動還原紀錄 | |
 
