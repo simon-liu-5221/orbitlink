@@ -916,6 +916,7 @@ dependencies = [
     { name = "redis" },
     { name = "rq" },
     { name = "scikit-learn" },
+    { name = "scipy" },
     { name = "sqlalchemy" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -945,6 +946,7 @@ requires-dist = [
     { name = "redis", specifier = ">=5.2" },
     { name = "rq", specifier = ">=2.0" },
     { name = "scikit-learn", specifier = ">=1.5" },
+    { name = "scipy", specifier = ">=1.14" },
     { name = "sqlalchemy", specifier = ">=2.0.36" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]
