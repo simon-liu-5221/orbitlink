@@ -53,7 +53,7 @@ commit: feat(AN-01): add multi-resolution louvain detection
 ### Analysis（分析引擎）
 | ID | 功能 | Status |
 |---|---|---|
-| AN-01 | 社群偵測 | specced |
+| AN-01 | 社群偵測 | done |
 | AN-02 | 參與度指標 | specced |
 | AN-03 | 情緒分析 | specced |
 | AN-04 | 影響者辨識 | draft |

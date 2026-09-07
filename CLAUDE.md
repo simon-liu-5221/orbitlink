@@ -15,7 +15,7 @@ OrbitLink：YouTube 留言網路分析工具。使用者貼上一個頻道或影
 | 層 | 選擇 |
 |---|---|
 | 後端 | Python 3.12, FastAPI, Pydantic v2 |
-| 分析 | NetworkX, python-louvain, pandas, scikit-learn |
+| 分析 | NetworkX（內建 `community.louvain_communities`）, pandas, numpy, scikit-learn |
 | NLP | HuggingFace transformers（多語情緒），詳見 ADR-0004 |
 | 任務佇列 | RQ + Redis |
 | 資料庫 | PostgreSQL 16 + SQLAlchemy 2.0 + Alembic |

@@ -20,15 +20,17 @@
 
 ```
 analysis/
-  graph_builder.py     # 留言 DataFrame → DiGraph（不負責抓資料）
-  communities.py       # Louvain + 多解析度最佳化
-  centrality.py        # PageRank、betweenness、degree
+  graph_builder.py     # 留言 DataFrame → DiGraph（不負責抓資料）；含 to_undirected_weighted
+  communities.py       # Louvain 多解析度最佳化 + 社群指標
+  centrality.py        # PageRank、betweenness（大圖 k 抽樣）、weighted degree
   engagement.py        # 六項加權評分
   sentiment.py         # 模型推論封裝（模型物件由外部注入）
   types.py             # 共用 dataclass
 ```
 
 `sentiment.py` 的模型不在模組內載入，由呼叫端注入，這樣測試時可以傳假的推論函式。
+
+**更新（M1）**：Louvain 用 `networkx.algorithms.community.louvain_communities`（networkx 內建，固定 `seed` 確保決定性），不引入 `python-louvain` 套件——一個依賴少一個。多解析度做法：對 `resolutions` 各跑一次，全部用標準（γ=1）modularity 評分，取最高者。空的 `resolutions` 或最佳化過程拋例外 → 記 warning、回退單次 resolution=1.0（AN-01 例外流程）。
 
 ### 測試策略
 
