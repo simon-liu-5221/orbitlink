@@ -4,6 +4,9 @@ YouTube 留言網路分析工具。輸入一個頻道或影片連結，產出互
 
 > 這是 FYP-25-S4-32 專案的獨立重建版，範圍收斂、規格重寫、演算法層可驗證、有 CI 與正式部署。
 
+**Live**（M0 骨架）：[app](https://orbitlink-web.onrender.com) · [API docs](https://orbitlink-api-nooj.onrender.com/docs) · [health](https://orbitlink-api-nooj.onrender.com/healthz)
+_後端在 Render free plan，閒置 15 分鐘會休眠，首次請求約 50 秒冷啟動。_
+
 ## 這個專案在解什麼問題
 
 想知道一個 YouTube 頻道的留言區裡誰在跟誰互動、有沒有形成穩定的討論小圈子、哪些人是真正的中心節點而不只是留言多、整體情緒往哪走。既有工具要嘛太貴（Brandwatch、Talkwalker），要嘛需要自己寫程式（Gephi、NetworkX）。OrbitLink 把兩者中間那塊補起來。

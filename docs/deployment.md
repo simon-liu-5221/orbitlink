@@ -112,7 +112,15 @@ Render 的 `autoDeploy: true` 已經處理：push 到 `main` → Render 自動�
 - [x] Neon project 建立，連線字串取得（已對 Neon 跑 `alembic upgrade head`）
 - [x] Upstash Redis 建立，`rediss://` 取得（已測 PING + RQ queue）
 - [x] 本機用真實 Neon + Upstash 跑 API，`/healthz` 回 `status: ok`
-- [ ] Render Blueprint apply，兩個 service 綠
-- [ ] `curl …/healthz` 回 `status: ok`
-- [ ] web URL 瀏覽器打開顯示兩顆綠燈
-- [ ] UptimeRobot monitor
+- [x] Render Blueprint apply，兩個 service 綠（API = `orbitlink-api-nooj`，web = `orbitlink-web`）
+- [x] `curl https://orbitlink-api-nooj.onrender.com/healthz` 回 `status: ok`（db + redis up）
+- [x] web `VITE_API_BASE_URL` 修正為 `-nooj` 網址並重 build；CORS preflight 通過
+- [ ]（選配）UptimeRobot monitor
+
+## 部署後備忘
+
+- API: https://orbitlink-api-nooj.onrender.com （`/docs`, `/healthz`）
+- Web: https://orbitlink-web.onrender.com
+- Render `orbitlink-api` 名稱被占用 → 服務名 `orbitlink-api-nooj`。`CORS_ORIGINS` 指向 web（clean 名稱，OK）；web `VITE_API_BASE_URL` 指向 `-nooj`。
+- push `main` → Render `autoDeploy` 自動重建兩個 service。
+- Neon / Upstash 連線字串在 Render 的 env vars（`sync: false`），不在 git。

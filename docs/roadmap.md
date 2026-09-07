@@ -20,12 +20,13 @@
 - [x] 本機 `docker compose up` 全套跑通：5 個 container、`/healthz` 回 `ok`、前端經 Vite proxy 打到 API、worker 監聽 `orbitlink` queue、`alembic upgrade head` 套用 `0001_baseline`
 - [x] 本機 CI 檢查全綠：`ruff` / `ruff format` / `mypy` / `lint-imports` / `pytest`（6 passed，含 2 integration）/ 前端 `typecheck` / `vitest`（2 passed）/ `build`
 - [x] push 到 GitHub（`simon-liu-5221/orbitlink`，public），Actions 全綠（backend + frontend 兩個 job 全部步驟通過）
-- [ ] 雲端部署：Render（API + 前端 static）、Neon（Postgres）、Upstash（Redis）。見 `docs/deployment.md` 與 `render.yaml`（ADR-0001 M0 更新：Fly.io 要綁卡，改用 Render free；worker 延到 M2）
+- [x] 雲端部署：Render（`orbitlink-api-nooj.onrender.com` API + `orbitlink-web.onrender.com` static）、Neon（Postgres, Singapore）、Upstash（Redis, Singapore）。見 `docs/deployment.md` 與 `render.yaml`（ADR-0001 M0 更新：Fly.io 要綁卡，改用 Render free；worker 延到 M2）
+- [ ]（選配）UptimeRobot monitor 打 `/healthz`，5 分鐘間隔（兼保溫，減少 Render free 冷啟動）
 
-**驗收**：production URL 打開能看到頁面，頁面顯示後端健康狀態。CI 全綠。
+**驗收**：✅ production URL `https://orbitlink-web.onrender.com` 打開顯示 OrbitLink 頁面與 database / redis 兩顆綠燈；`/healthz` 回 `status: ok`；CORS 正確；GitHub Actions 全綠。**M0 完成。**
 
-> 進度：本機骨架、compose 全套、CI 全部驗證通過並已在 GitHub Actions 上跑綠。剩雲端部署（Render Blueprint 已備妥，待建 Neon / Upstash / Render 帳號並 apply）。
-> 註：compose 把 Postgres / Redis 發佈在 host 的 55432 / 56379（避開本機已安裝的 PostgreSQL 16）；container 之間仍是 5432 / 6379。
+> 已知限制（延到後續里程碑）：Render free 15 分鐘休眠 + ~50s 冷啟動（AVAIL-01 暫緩，見 nfr.md）；RQ worker 未部署（Render 無免費 worker，M2 決定付費或搬遷）。
+> 本機 compose 把 Postgres / Redis 發佈在 host 的 55432 / 56379（避開本機已安裝的 PostgreSQL 16）；container 之間仍是 5432 / 6379。
 
 > 這一週看起來沒有功能，但它是整個專案能不能收尾的關鍵。原 FYP 沒有這一步，所以測試只能在 localhost 手動做。
 
