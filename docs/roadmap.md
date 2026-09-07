@@ -36,16 +36,18 @@
 
 在碰任何 API 之前先把核心價值做出來且證明它是對的。
 
-- [ ] `analysis/graph_builder.py` — 留言 DataFrame → DiGraph
-- [ ] `analysis/communities.py` — Louvain 多解析度最佳化
-- [ ] `analysis/centrality.py` — PageRank、betweenness、degree
-- [ ] `analysis/engagement.py` — 六項加權評分
-- [ ] `analysis/sentiment.py` — 模型注入式封裝
-- [ ] 單元測試，覆蓋率 ≥ 90%
-- [ ] Zachary karate club + LFR benchmark 驗證腳本
-- [ ] `import-linter` 規則加入 CI
+- [x] `analysis/graph_builder.py` — 留言 DataFrame → DiGraph（+ `to_undirected_weighted`）— PR #1
+- [x] `analysis/communities.py` — Louvain 多解析度最佳化 + 社群指標（AN-01）— PR #1
+- [x] `analysis/centrality.py` — PageRank、betweenness（大圖 k 抽樣）、weighted degree — PR #1
+- [x] `analysis/engagement.py` — 六項加權評分 + `weight_sensitivity`（AN-02）— PR #2
+- [x] `analysis/sentiment.py` — 模型注入式封裝（AN-03，無 transformers/torch）— PR #3
+- [x] 單元測試，`app/analysis/` 覆蓋率 **100%**（64 tests；CI `--cov-fail-under=90`）
+- [x] Zachary karate club + LFR benchmark 驗證腳本 — `backend/scripts/regen_validation.py`
+- [x] `import-linter` 規則加入 CI（M0 已接，M1 持續 KEPT）
 
-**驗收**：`pytest backend/tests/unit` 在無網路、無資料庫的環境下全綠。`docs/algorithm-validation.md` 第一版完成，含 modularity 與 NMI 對照表。
+**驗收**：✅ `pytest -m "not integration"` 在無網路、無資料庫下全綠（60 unit）。`docs/algorithm-validation.md` 第 1、2、4 節完成（Zachary modularity 0.4266、LFR NMI 表、多解析度對照、權重敏感度、效能瓶頸分析）；第 3 節（情緒 F1）依 AN-03 AC-9 延到 M8。**M1 完成。**
+
+> M1 誠實發現：(1) 社群偵測在 LFR mu ≥ 0.5 失效——已有 `weak_structure` 旗標處理；(2) 多解析度最佳化在所有 benchmark 圖上零改善，暫時保留待真實資料再評估（可能改 ADR-0003）；(3) betweenness 是效能瓶頸，>2000 節點自動 k 抽樣。詳見 `docs/algorithm-validation.md` §5。
 
 ---
 
