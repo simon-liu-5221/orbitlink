@@ -7,9 +7,13 @@ these to DB rows and API schemas (later milestones).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 
 # A node id is the (pseudonymised, in production) author identifier.
 NodeId = str
+
+#: The three sentiment classes, in a fixed order (AN-03).
+SENTIMENT_LABELS: tuple[str, ...] = ("negative", "neutral", "positive")
 
 
 @dataclass(frozen=True)
@@ -82,6 +86,66 @@ class WeightSensitivity:
     #: metric name -> min Spearman correlation (over the ± perturbations) with the
     #: baseline full ranking.
     spearman: dict[str, float]
+
+
+@dataclass(frozen=True)
+class SentimentPrediction:
+    """What an injected model returns for one comment: 3 class probabilities
+    (should sum to ~1) plus a 0–1 toxicity score."""
+
+    negative: float
+    neutral: float
+    positive: float
+    toxicity: float
+
+
+@dataclass(frozen=True)
+class CommentSentiment:
+    """Per-comment sentiment outcome (AN-03)."""
+
+    comment_id: str
+    #: argmax label, or ``None`` when skipped / failed.
+    label: str | None
+    #: Continuous score ``p_positive - p_negative`` in [-1, 1]; ``None`` when
+    #: skipped / failed.
+    score: float | None
+    toxicity: float | None
+    #: Empty / emoji-only text — not sent to the model, excluded from aggregates.
+    skipped: bool = False
+    #: The batch this comment was in exhausted its retries.
+    failed: bool = False
+    #: Text was truncated before inference.
+    truncated: bool = False
+
+
+@dataclass(frozen=True)
+class SentimentTrendPoint:
+    bucket_start: datetime
+    mean_score: float
+    count: int
+
+
+@dataclass(frozen=True)
+class SentimentResult:
+    """Outcome of :meth:`app.analysis.sentiment.SentimentAnalyzer.analyze`."""
+
+    comments: list[CommentSentiment]
+    #: Percentage of scored comments in each class; keys are ``SENTIMENT_LABELS``,
+    #: values sum to ~100 (0.0 each when nothing was scored).
+    distribution: dict[str, float]
+    #: Mean score per time bucket, ordered by bucket start.
+    trend: list[SentimentTrendPoint]
+    #: ``"hour"`` when the analysis window is < 7 days, else ``"day"``.
+    trend_bucket: str
+    #: community id -> mean sentiment score (empty when no ``community_id`` given).
+    by_community: dict[int, float]
+    #: Fraction of scored comments with toxicity above the threshold.
+    toxic_ratio: float
+    skipped_count: int
+    #: failed comments / comments sent to the model.
+    failed_ratio: float
+    #: truncated comments / comments sent to the model.
+    truncated_ratio: float
 
 
 @dataclass(frozen=True)

@@ -1,8 +1,10 @@
 # AN-03：情緒分析
 
-**Status**: specced
+**Status**: done（AC-9 除外，延到 M8）
 **Actor**: System
 **相關 ADR**: ADR-0003, ADR-0004
+
+> 實作：`backend/app/analysis/sentiment.py`（`SentimentAnalyzer(predict_fn=...)`，模型注入式，無 transformers/torch 依賴），測試 `backend/tests/unit/analysis/test_sentiment.py`（19 tests，`app/analysis` 覆蓋率 100%）。branch `feat/AN-03-sentiment`。真實模型封裝在 worker（M2，ADR-0004）。
 
 ## 目的
 
@@ -48,15 +50,15 @@
 
 ## Acceptance Criteria
 
-- [ ] **AC-1** Given 注入一個回傳固定機率的假模型，When 執行分析，Then 批次切分正確且每則留言都有結果
-- [ ] **AC-2** Given 100 則留言與 batch_size=32，When 執行，Then 假模型被呼叫 4 次
-- [ ] **AC-3** Given 一則空字串留言，When 執行，Then 該筆標記 skipped 且不影響整體分布的分母
-- [ ] **AC-4** Given 假模型在第 2 批連續拋出 3 次例外，When 執行，Then 該批標記 failed 而其餘批次完成，結果 `failed_ratio` 正確
-- [ ] **AC-5** Given 失敗比例達 25%，When 執行，Then 拋出 `SentimentAnalysisFailed`
-- [ ] **AC-6** Given 一組已知標籤的留言，When 聚合，Then 三類百分比加總為 100（容差 0.1）
-- [ ] **AC-7** Given 分析期間為 3 天，When 分桶，Then 桶單位為小時；期間為 30 天時為天
-- [ ] **AC-8** Given 模型未注入，When 執行，Then 拋出明確例外而非回傳預設值
-- [ ] **AC-9** 在 500 筆人工標註樣本上，macro F1 ≥ 0.65 且結果記入 `docs/algorithm-validation.md`
+- [x] **AC-1** Given 注入一個回傳固定機率的假模型，When 執行分析，Then 批次切分正確且每則留言都有結果 — `test_ac1_batches_split_correctly_and_every_comment_has_a_result`
+- [x] **AC-2** Given 100 則留言與 batch_size=32，When 執行，Then 假模型被呼叫 4 次 — `test_ac2_hundred_comments_batch_32_calls_model_four_times`
+- [x] **AC-3** Given 一則空字串留言，When 執行，Then 該筆標記 skipped 且不影響整體分布的分母 — `test_ac3_empty_comment_is_skipped_and_excluded_from_distribution`
+- [x] **AC-4** Given 假模型在第 2 批連續拋出 3 次例外，When 執行，Then 該批標記 failed 而其餘批次完成，結果 `failed_ratio` 正確 — `test_ac4_failing_batch_is_isolated_and_failed_ratio_is_reported`（500 則 / batch 50，第 2 批失敗 → failed_ratio 0.1）
+- [x] **AC-5** Given 失敗比例達 25%，When 執行，Then 拋出 `SentimentAnalysisFailed` — `test_ac5_failure_above_threshold_raises`
+- [x] **AC-6** Given 一組已知標籤的留言，When 聚合，Then 三類百分比加總為 100（容差 0.1）— `test_ac6_distribution_percentages_sum_to_100`
+- [x] **AC-7** Given 分析期間為 3 天，When 分桶，Then 桶單位為小時；期間為 30 天時為天 — `test_ac7_trend_bucket_is_hourly_under_a_week_daily_over`
+- [x] **AC-8** Given 模型未注入，When 執行，Then 拋出明確例外而非回傳預設值 — `test_ac8_missing_model_raises_not_defaults`（`SentimentModelNotLoaded`）
+- [ ] **AC-9** 在 500 筆人工標註樣本上，macro F1 ≥ 0.65 且結果記入 `docs/algorithm-validation.md` — **延到 M8**（需要真實人工標註資料，不是假模型）
 
 ## Out of scope
 
