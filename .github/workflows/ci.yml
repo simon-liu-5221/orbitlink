@@ -70,6 +70,9 @@ jobs:
       - name: Pytest
         run: uv run pytest --cov=app --cov-report=term-missing --cov-report=xml
 
+      - name: Analysis-layer coverage gate (MAINT-01 >= 90%)
+        run: uv run pytest tests/unit/analysis --cov=app.analysis --cov-report=term-missing --cov-fail-under=90
+
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:

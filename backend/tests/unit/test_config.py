@@ -1,4 +1,5 @@
 import pytest
+
 from app.core.config import Settings
 
 _ENV_VARS = ["ENVIRONMENT", "DEBUG", "DATABASE_URL", "REDIS_URL"]

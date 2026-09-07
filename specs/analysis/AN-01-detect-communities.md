@@ -1,8 +1,10 @@
 # AN-01：社群偵測
 
-**Status**: specced
+**Status**: done
 **Actor**: System（在分析 job 的 `analyzing` 階段自動執行）
 **相關 ADR**: ADR-0002, ADR-0003
+
+> 實作：`backend/app/analysis/{types,graph_builder,centrality,communities}.py`，測試 `backend/tests/unit/analysis/`（100% 覆蓋率，34 tests）。branch `feat/AN-01-detect-communities`。
 
 ## 目的
 
@@ -50,14 +52,14 @@
 
 ## Acceptance Criteria
 
-- [ ] **AC-1** Given Zachary karate club 圖，When 執行社群偵測，Then modularity ≥ 0.40 且社群數在 2–5 之間
-- [ ] **AC-2** Given 一個 LFR benchmark 圖（mu=0.1，已知 ground truth），When 執行偵測，Then 與 ground truth 的 NMI ≥ 0.85
-- [ ] **AC-3** Given 一個 2 節點 1 邊的圖，When 執行偵測，Then 回傳 `insufficient_data=True` 且不拋例外
-- [ ] **AC-4** Given 一個完全隨機的 Erdős–Rényi 圖，When 執行偵測，Then `weak_structure=True`
-- [ ] **AC-5** Given 任一有效圖，When 執行兩次偵測且 random_state 相同，Then 兩次結果的社群指派完全一致
-- [ ] **AC-6** Given 一個已知社群結構的手工 fixture 圖，When 計算社群指標，Then 每個社群的節點數、密度、平均情緒與手算值相符
-- [ ] **AC-7** Given 解析度最佳化拋出例外，When 執行偵測，Then 回傳 resolution=1.0 的結果且記錄警告，不拋出
-- [ ] **AC-8** `communities.py` 不 import 任何 db / api / http 模組（由 import-linter 驗證）
+- [x] **AC-1** Given Zachary karate club 圖，When 執行社群偵測，Then modularity ≥ 0.40 且社群數在 2–5 之間 — `test_ac1_zachary_karate_club`（實測 modularity 0.4266、4 社群）
+- [x] **AC-2** Given 一個 LFR benchmark 圖（mu=0.1，已知 ground truth），When 執行偵測，Then 與 ground truth 的 NMI ≥ 0.85 — `test_ac2_lfr_benchmark_nmi`（實測 NMI 1.00，n=500）
+- [x] **AC-3** Given 一個 2 節點 1 邊的圖，When 執行偵測，Then 回傳 `insufficient_data=True` 且不拋例外 — `test_ac3_two_node_graph_is_insufficient_data`
+- [x] **AC-4** Given 一個完全隨機的 Erdős–Rényi 圖，When 執行偵測，Then `weak_structure=True` — `test_ac4_random_graph_flags_weak_structure`
+- [x] **AC-5** Given 任一有效圖，When 執行兩次偵測且 random_state 相同，Then 兩次結果的社群指派完全一致 — `test_ac5_same_seed_gives_identical_assignment`
+- [x] **AC-6** Given 一個已知社群結構的手工 fixture 圖，When 計算社群指標，Then 每個社群的節點數、密度、平均情緒與手算值相符 — `test_ac6_hand_fixture_metrics_match_by_hand`
+- [x] **AC-7** Given 解析度最佳化拋出例外，When 執行偵測，Then 回傳 resolution=1.0 的結果且記錄警告，不拋出 — `test_ac7_resolution_sweep_failure_falls_back_to_res_1`
+- [x] **AC-8** `communities.py` 不 import 任何 db / api / http 模組（由 import-linter 驗證）— `test_ac8_module_does_not_import_io_layers` + CI `lint-imports`
 
 ## Out of scope
 
