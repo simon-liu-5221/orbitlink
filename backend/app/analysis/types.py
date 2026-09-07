@@ -34,6 +34,56 @@ class CommunityMetrics:
     density: float
 
 
+#: The six engagement sub-metrics (AN-02), in a fixed order.
+ENGAGEMENT_METRICS: tuple[str, ...] = (
+    "engagement",
+    "consistency",
+    "network",
+    "quality",
+    "activity",
+    "responsiveness",
+)
+
+
+@dataclass(frozen=True)
+class NodeEngagement:
+    """One node's engagement score (AN-02)."""
+
+    node_id: NodeId
+    #: Final score on the 1.0–10.0 scale.
+    score: float
+    #: 1-based rank (1 = most engaged).
+    rank: int
+    #: The six normalised sub-scores in [0, 1] — the breakdown the frontend shows.
+    breakdown: dict[str, float]
+    #: The six raw (pre-normalisation) metric values.
+    raw: dict[str, float]
+
+
+@dataclass(frozen=True)
+class EngagementResult:
+    """Outcome of :func:`app.analysis.engagement.score_engagement`."""
+
+    #: Every node, ordered by score descending then node id.
+    rankings: list[NodeEngagement]
+    #: ``rankings[:top_n]`` — kept separately for the frontend's top-N panels.
+    top: list[NodeEngagement]
+    #: The (normalised-to-sum-1) weights actually applied.
+    weights: dict[str, float]
+
+
+@dataclass(frozen=True)
+class WeightSensitivity:
+    """Sensitivity of the ranking to a ±delta perturbation of each weight."""
+
+    delta: float
+    #: metric name -> did the top-N set stay the same when this weight moved ±delta.
+    top_stable: dict[str, bool]
+    #: metric name -> min Spearman correlation (over the ± perturbations) with the
+    #: baseline full ranking.
+    spearman: dict[str, float]
+
+
 @dataclass(frozen=True)
 class CommunityDetectionResult:
     """Outcome of :func:`app.analysis.communities.detect_communities`."""

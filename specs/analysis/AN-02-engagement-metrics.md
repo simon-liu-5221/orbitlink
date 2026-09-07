@@ -1,8 +1,10 @@
 # AN-02：參與度指標
 
-**Status**: specced
+**Status**: done
 **Actor**: System
 **相關 ADR**: ADR-0003
+
+> 實作：`backend/app/analysis/engagement.py`（`raw_metrics` / `normalize` / `weighted_score` / `score_engagement` + `weight_sensitivity`），測試 `backend/tests/unit/analysis/test_engagement.py`（15 tests，`app/analysis` 覆蓋率 100%）。branch `feat/AN-02-engagement-metrics`。
 
 ## 目的
 
@@ -53,14 +55,16 @@
 
 ## Acceptance Criteria
 
-- [ ] **AC-1** Given 任意有效輸入，When 計算分數，Then 所有分數落在 1.0–10.0 閉區間內
-- [ ] **AC-2** `sum(DEFAULT_WEIGHTS.values()) == 1.0`（浮點容差 1e-9）
-- [ ] **AC-3** Given 一個手工 fixture（3 個節點，各項指標為已知值），When 計算，Then 每個節點的總分與手算值相符至小數點後 4 位
-- [ ] **AC-4** Given 兩個節點除了 Engagement 外所有指標相同，When 計算，Then Engagement 較高者總分較高
-- [ ] **AC-5** Given 所有節點的 Activity 完全相同，When 正規化，Then 不拋除以零，該項全部為 0.5
-- [ ] **AC-6** Given 只有 2 個節點的網路，When 取前 5 名，Then 回傳 2 筆而非補空
-- [ ] **AC-7** Given 一組輸入，When 用自訂權重覆寫 DEFAULT_WEIGHTS，Then 分數依新權重改變且仍在 1–10 內
-- [ ] **AC-8** 前 5 名結果中每一筆都包含六項細項分數，供前端拆解顯示
+- [x] **AC-1** Given 任意有效輸入，When 計算分數，Then 所有分數落在 1.0–10.0 閉區間內 — `test_ac1_all_scores_within_one_to_ten`
+- [x] **AC-2** `sum(DEFAULT_WEIGHTS.values()) == 1.0`（浮點容差 1e-9）— `test_ac2_default_weights_sum_to_one`
+- [x] **AC-3** Given 一個手工 fixture（3 個節點，各項指標為已知值），When 計算，Then 每個節點的總分與手算值相符至小數點後 4 位 — `test_ac3_hand_computed_scores_match_to_four_decimals`
+- [x] **AC-4** Given 兩個節點除了 Engagement 外所有指標相同，When 計算，Then Engagement 較高者總分較高 — `test_ac4_higher_engagement_wins_when_all_else_equal`
+- [x] **AC-5** Given 所有節點的 Activity 完全相同，When 正規化，Then 不拋除以零，該項全部為 0.5 — `test_ac5_uniform_metric_normalises_to_half_without_dividing_by_zero`
+- [x] **AC-6** Given 只有 2 個節點的網路，When 取前 5 名，Then 回傳 2 筆而非補空 — `test_ac6_top_n_returns_actual_count_for_small_network`
+- [x] **AC-7** Given 一組輸入，When 用自訂權重覆寫 DEFAULT_WEIGHTS，Then 分數依新權重改變且仍在 1–10 內 — `test_ac7_custom_weights_change_scores_but_stay_in_range`（權重內部正規化到總和 1，任何非負權重都保證在範圍內）
+- [x] **AC-8** 前 5 名結果中每一筆都包含六項細項分數，供前端拆解顯示 — `test_ac8_top_entries_carry_all_six_subscores`
+
+> 敏感度分析：`weight_sensitivity()` 已實作（每項權重 ±10%，回報前 N 名是否穩定 + 與基準排名的最差 Spearman）。數字表格在 `docs/algorithm-validation.md` §2.1（branch 4 補）。
 
 ## Out of scope
 
