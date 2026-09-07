@@ -109,8 +109,9 @@ Render 的 `autoDeploy: true` 已經處理：push 到 `main` → Render 自動�
 - [x] 本機 `docker compose up`
 - [x] `uv.lock` committed
 - [x] push GitHub + Actions 全綠
-- [ ] Neon project 建立，連線字串取得
-- [ ] Upstash Redis 建立，`rediss://` 取得
+- [x] Neon project 建立，連線字串取得（已對 Neon 跑 `alembic upgrade head`）
+- [x] Upstash Redis 建立，`rediss://` 取得（已測 PING + RQ queue）
+- [x] 本機用真實 Neon + Upstash 跑 API，`/healthz` 回 `status: ok`
 - [ ] Render Blueprint apply，兩個 service 綠
 - [ ] `curl …/healthz` 回 `status: ok`
 - [ ] web URL 瀏覽器打開顯示兩顆綠燈
