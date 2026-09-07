@@ -38,6 +38,12 @@ uv run mypy app
 uv run lint-imports                  # analysis/ layer purity (ADR-0003)
 ```
 
+## Algorithm validation
+
+```bash
+uv run python scripts/regen_validation.py   # regenerates docs/algorithm-validation.md numbers
+```
+
 ## Layout
 
 | Path | Role |
