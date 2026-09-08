@@ -59,13 +59,14 @@
 - [x] 假名化（HMAC）— PR #6；留言原文保留策略：schema only（決定 E1）
 - [x] AN-04 影響者辨識（決定 F1，併入 M2）— PR #7
 - [x] service 層把 M1 六個模組串起來 + 情緒模型輕量替身（決定 B1）— PR #7
-- [ ] `POST /analyses` → `202`、`GET /jobs/{id}` 輪詢 + dev 佔位認證（決定 A1）— PR 4（`feat/PR-01-api`）
+- [x] `POST /analyses` → `202`、`GET /jobs/{id}` 輪詢、`GET /analyses/{id}`、`POST /jobs/{id}/cancel` + dev 佔位認證（決定 A1）+ 限流 10/min/IP — PR #8（`feat/PR-01-api`）
 - [x] 整合測試：完整 job 跑通、配額耗盡、資料不足、cancel、worker 崩潰恢復 — PR #7
+- [x] OpenAPI → 前端型別產生（`frontend/src/api/schema.d.ts`）
 
-**驗收**：用 curl 送一個真實頻道連結，能在資料庫看到完整的分析結果。kill worker 後 job 會恢復。
+**驗收**：✅ 送真實影片連結（`aqz-KE-bpKQ`，150 則留言）跑通 —— job `completed`、progress 100、資料庫有 140 nodes / 107 edges / 33 communities / 150 comments、modularity 0.955、作者全部 HMAC 假名化。reaper 測試證明 kill worker 後 job 標 failed。**M2 完成。**
 
-> 進度（PR 3/4）：整條 pipeline 在整合測試裡跑通（FakeYouTube + 輕量情緒模型 + 真實 DB）。
-> 剩 HTTP 端點（PR 4）。worker 不部署（決定 C1，Render 無免費 worker），本機 compose 驗收。
+> worker 不部署（決定 C1，Render 無免費 worker）—— 線上網站可送 job 但不會被執行，直到 M2 後找到 worker 落腳處（付費 or Fly）。本機 `docker compose up` 全套可用。
+> 本機 Windows：`worker.py` 偵測到 Windows 時用 `SimpleWorker`（沒有 `os.fork()`）；Linux（CI / docker）用預設的 forking `Worker`。
 
 ---
 

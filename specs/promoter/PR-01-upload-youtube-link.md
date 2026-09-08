@@ -1,11 +1,12 @@
 # PR-01：上傳 YouTube 連結並啟動分析
 
-**Status**: in-progress
+**Status**: done
 **Actor**: Promoter
 **相關 ADR**: ADR-0002
 
-> M2 分階段實作：連結解析 + YouTube client 在 `feat/PR-01-ingest`（PR 2）；job 執行串接在
-> `feat/M2-analysis-service`（PR 3）；`POST /analyses` 端點與 AC 驗收在 `feat/PR-01-api`（PR 4）。
+> M2 分四個 PR 完成：連結解析 + YouTube client（#6）、job 執行串接（#7）、
+> `POST /analyses` 端點與 AC 驗收（#8 `feat/PR-01-api`）。
+> 認證是 M2 的 dev 佔位版（`X-User-Id` header，決定 A1）；真正的 JWT 在 M3（GU-01）。
 
 ## 目的
 
@@ -54,16 +55,16 @@
 
 ## Acceptance Criteria
 
-- [ ] **AC-1** Given 合法的影片連結，When POST，Then 回 202 且 body 含 job_id，且資料庫有一筆 `queued` 的 job
+- [x] **AC-1** Given 合法的影片連結，When POST，Then 回 202 且 body 含 job_id，且資料庫有一筆 `queued` 的 job — `test_analysis_api.py::test_start_analysis_returns_202_with_a_queued_job`
 - [x] **AC-2** Given 各種連結格式（`youtube.com/watch?v=`、`youtu.be/`、`youtube.com/@handle`、`youtube.com/channel/UC...`、含額外 query 參數、`shorts/`、`live/`、`m.youtube.com`），When 解析，Then 都能正確取出 ID — `parse_youtube_url`，`test_urls.py::test_parses_supported_formats`（12 個格式）
-- [~] **AC-3** Given 非 YouTube 的 URL 或亂碼字串，When 解析，Then 拋 `InvalidYouTubeURLError`（`create_job` 轉成 `InvalidAnalysisRequestError` code `INVALID_URL`）— `test_analysis_service.py::test_create_job_rejects_bad_url`（端點回 422 在 PR 4）
-- [ ] **AC-4** Given 使用者 A 的專案 ID，When 使用者 B POST，Then 回 403 且不洩漏該專案是否存在 —（PR 4，dev 佔位認證）
-- [~] **AC-5** Given 該專案已有進行中的 job，When 再次建立，Then `create_job` 拋 `ProjectBusyError` — `test_create_job_rejects_a_second_live_job`（端點回 409 在 PR 4）
+- [x] **AC-3** Given 非 YouTube 的 URL 或亂碼字串，When POST，Then 回 422 且 body 含 `error_code=INVALID_URL` — `test_analysis_api.py::test_bad_url_returns_422_with_error_code`
+- [x] **AC-4** Given 使用者 A 的專案 ID，When 使用者 B POST，Then 回 403 且不洩漏該專案是否存在 — `test_another_users_project_is_403_and_does_not_leak_existence`（不存在與非本人的專案回應相同）
+- [x] **AC-5** Given 該專案已有進行中的 job，When 再次 POST，Then 回 409 `error_code=PROJECT_BUSY` — `test_second_live_job_returns_409`
 - [x] **AC-6** Given YouTube API 回 quota exceeded，When job 執行，Then job 狀態為 failed 且 `error_code=QUOTA_EXCEEDED` — `test_analysis_service.py::test_quota_exceeded_fails_the_job`
-- [ ] **AC-7** Given job 執行中，When 呼叫 `GET /jobs/{id}`，Then 回傳的 status 屬於狀態機定義的合法值，progress 為 0–100 的整數 —（PR 4）
-- [x] **AC-8** Given job 進入 completed，When 查詢資料庫，Then 沒有任何一筆記錄含有原始 YouTube channel ID（全部已假名化）— `test_analysis_service.py::test_video_analysis_completes_and_persists_everything`（斷言 nodes/comments 的 pseudonym 都不以 `UC_` 開頭）
-- [ ] **AC-9** Given 未認證的請求，When POST，Then 回 401
-- [ ] **AC-10** Given 一分鐘內同一 IP 發出 11 次請求，When 第 11 次，Then 回 429
+- [x] **AC-7** Given job 執行中，When 呼叫 `GET /jobs/{id}`，Then 回傳的 status 屬於狀態機合法值，progress 為 0–100 整數 — `test_job_status_is_pollable`
+- [x] **AC-8** Given job 進入 completed，When 查詢資料庫，Then 沒有任何一筆記錄含有原始 YouTube channel ID（全部已假名化）— `test_analysis_service.py::test_video_analysis_completes_and_persists_everything` + 真實影片 smoke test（150 則留言，作者全部 HMAC）
+- [~] **AC-9** Given 未認證的請求，When POST，Then 回 401 — `test_unknown_x_user_id_is_401`（M2 dev 佔位：無效 `X-User-Id` → 401；缺 header → dev user。真正的「缺 JWT → 401」在 M3）
+- [x] **AC-10** Given 一分鐘內同一 IP 發出 11 次請求，When 第 11 次，Then 回 429 — `test_rate_limit_kicks_in_at_eleven`（redis 固定視窗，SEC-05）
 
 ## Out of scope
 

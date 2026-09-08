@@ -8,7 +8,33 @@ FastAPI + SQLAlchemy + Alembic + RQ. Package manager: [uv](https://docs.astral.s
 uv sync
 uv run alembic upgrade head          # needs a reachable Postgres
 uv run uvicorn app.main:app --reload
-uv run rq worker orbitlink           # or: uv run python -m app.jobs.worker
+uv run python -m app.jobs.worker     # NOT `rq worker` — needs the startup reaper
+```
+
+The worker auto-selects `SimpleWorker` on Windows (no `os.fork`); Linux uses the
+default forking `Worker`.
+
+## Analysis API (M2, spec PR-01)
+
+```
+POST /api/v1/projects                         create a project
+POST /api/v1/projects/{id}/analyses           -> 202 { job_id }   (start an analysis)
+GET  /api/v1/jobs/{job_id}                     poll status + progress
+POST /api/v1/jobs/{job_id}/cancel             cancel a running job
+GET  /api/v1/analyses/{analysis_id}           summary + communities + top participants
+```
+
+Auth is a placeholder for M2: an `X-User-Id` header names the user; absent → the
+seeded dev user. Real JWT auth is M3 (spec GU-01).
+
+Sentiment uses a lexicon stand-in by default; `USE_REAL_SENTIMENT_MODEL=true`
+plus `uv pip install transformers torch` switches to XLM-RoBERTa (decision B1).
+
+Regenerate the frontend types after an API change:
+
+```bash
+uv run uvicorn app.main:app &        # then, from ../frontend:
+npm run gen:api
 ```
 
 ## Tests

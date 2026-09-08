@@ -10,8 +10,9 @@ periodic reaper, then processes the queue.
 from __future__ import annotations
 
 import logging
+import os
 
-from rq import Worker
+from rq import SimpleWorker, Worker
 
 from app.core.config import get_settings
 from app.core.logging import configure_logging
@@ -21,6 +22,10 @@ from app.jobs.reaper import reap_stale_jobs
 from app.jobs.tasks import REAPER_INTERVAL, reap_stale_jobs_task
 
 logger = logging.getLogger(__name__)
+
+# The default forking Worker needs os.fork(); Windows (local dev) has none, so
+# fall back to the in-process SimpleWorker there. Production runs on Linux.
+_WorkerClass = SimpleWorker if os.name == "nt" else Worker
 
 
 def main() -> None:
@@ -32,7 +37,7 @@ def main() -> None:
         session.commit()
     get_queue().enqueue_in(REAPER_INTERVAL, reap_stale_jobs_task)
 
-    worker = Worker([get_queue()], connection=get_redis())
+    worker = _WorkerClass([get_queue()], connection=get_redis())
     worker.work(with_scheduler=True)
 
 
