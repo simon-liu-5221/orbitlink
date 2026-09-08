@@ -57,7 +57,7 @@ commit: feat(AN-01): add multi-resolution louvain detection
 | AN-02 | 參與度指標 | done |
 | AN-03 | 情緒分析 | done（AC-9 F1 延到 M8）|
 | AN-04 | 影響者辨識 | draft |
-| AN-05 | 分析 job 狀態與進度 | draft |
+| AN-05 | 分析 job 狀態與進度 | in-progress |
 | AN-06 | 歷史趨勢比較 | draft |
 
 ### Admin
