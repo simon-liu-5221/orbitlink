@@ -37,7 +37,7 @@ commit: feat(AN-01): add multi-resolution louvain detection
 ### Promoter（註冊使用者）
 | ID | 功能 | Status |
 |---|---|---|
-| PR-01 | 上傳 YouTube 連結並啟動分析 | specced |
+| PR-01 | 上傳 YouTube 連結並啟動分析 | in-progress |
 | PR-02 | 登入 / 登出 / 記住我 | draft |
 | PR-03 | 重設密碼 | draft |
 | PR-04 | 檢視與更新個人資料 | draft |
