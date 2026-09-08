@@ -13,6 +13,7 @@ dependencies = [
     "psycopg[binary]>=3.2",
     "redis>=5.2",
     "rq>=2.0",
+    "httpx>=0.28",
     # analysis layer (M1)
     "networkx>=3.4",
     "numpy>=2.1",
@@ -27,7 +28,6 @@ dev = [
     "mypy>=1.13",
     "pytest>=8.3",
     "pytest-cov>=6.0",
-    "httpx>=0.28",
     "import-linter>=2.1",
     "fakeredis>=2.26",
     "pandas-stubs>=2.2",

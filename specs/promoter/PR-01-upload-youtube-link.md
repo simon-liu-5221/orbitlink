@@ -1,8 +1,11 @@
 # PR-01：上傳 YouTube 連結並啟動分析
 
-**Status**: specced
+**Status**: in-progress
 **Actor**: Promoter
 **相關 ADR**: ADR-0002
+
+> M2 分階段實作：連結解析 + YouTube client 在 `feat/PR-01-ingest`（PR 2）；job 執行串接在
+> `feat/M2-analysis-service`（PR 3）；`POST /analyses` 端點與 AC 驗收在 `feat/PR-01-api`（PR 4）。
 
 ## 目的
 
@@ -52,8 +55,8 @@
 ## Acceptance Criteria
 
 - [ ] **AC-1** Given 合法的影片連結，When POST，Then 回 202 且 body 含 job_id，且資料庫有一筆 `queued` 的 job
-- [ ] **AC-2** Given 各種連結格式（`youtube.com/watch?v=`、`youtu.be/`、`youtube.com/@handle`、`youtube.com/channel/UC...`、含額外 query 參數），When 解析，Then 都能正確取出 ID
-- [ ] **AC-3** Given 非 YouTube 的 URL 或亂碼字串，When POST，Then 回 422 且錯誤訊息指出預期格式
+- [x] **AC-2** Given 各種連結格式（`youtube.com/watch?v=`、`youtu.be/`、`youtube.com/@handle`、`youtube.com/channel/UC...`、含額外 query 參數、`shorts/`、`live/`、`m.youtube.com`），When 解析，Then 都能正確取出 ID — `parse_youtube_url`，`test_urls.py::test_parses_supported_formats`（12 個格式）
+- [~] **AC-3** Given 非 YouTube 的 URL 或亂碼字串，When 解析，Then 拋 `InvalidYouTubeURLError` 且訊息含預期格式範例 — `test_rejects_bad_links_with_format_guidance`（純函式層完成；端點回 422 在 PR 4）
 - [ ] **AC-4** Given 使用者 A 的專案 ID，When 使用者 B POST，Then 回 403 且不洩漏該專案是否存在
 - [ ] **AC-5** Given 該專案已有 `analyzing` 狀態的 job，When 再次 POST，Then 回 409
 - [ ] **AC-6** Given YouTube API 回 quota exceeded，When job 執行，Then job 狀態為 failed 且 `error_code=QUOTA_EXCEEDED`
