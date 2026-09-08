@@ -38,9 +38,24 @@ class Settings(BaseSettings):
     pseudonym_key: str = "dev-only-insecure-change-me"
     youtube_api_key: str = ""
 
+    # Analysis pipeline (M2)
+    #: Use the real XLM-RoBERTa sentiment/toxicity models (ADR-0004) instead of
+    #: the lexicon stand-in. Needs the ``sentiment`` extra installed. Default off
+    #: (decision B1).
+    use_real_sentiment_model: bool = False
+    analysis_default_max_comments: int = 5000
+    analysis_max_comments_cap: int = 50_000  # CAP-01
+    analysis_channel_video_count: int = 10
+    #: A job with no worker heartbeat for this long is reaped as failed (ADR-0002).
+    job_heartbeat_timeout_minutes: int = 30
+
     @property
     def is_production(self) -> bool:
         return self.environment == "production"
+
+    @property
+    def pseudonym_key_bytes(self) -> bytes:
+        return self.pseudonym_key.encode("utf-8")
 
 
 @lru_cache
