@@ -22,6 +22,11 @@ dependencies = [
     "scipy>=1.14",
 ]
 
+# The real sentiment/toxicity models (ADR-0004) need `transformers` + `torch`.
+# Not declared here — their lock/CUDA footprint is large and they are only
+# evaluated for real in M8. Enable with `use_real_sentiment_model=true` after
+# `uv pip install transformers torch` (decision B1).
+
 [dependency-groups]
 dev = [
     "ruff>=0.8",
@@ -82,7 +87,12 @@ markers = [
 
 [tool.coverage.run]
 source = ["app"]
-omit = ["app/db/migrations/*", "alembic/*"]
+omit = [
+    "app/db/migrations/*",
+    "alembic/*",
+    # real NLP model wrapper — needs the optional 'sentiment' extra, evaluated in M8
+    "app/services/sentiment_transformers.py",
+]
 
 [tool.importlinter]
 root_package = "app"
