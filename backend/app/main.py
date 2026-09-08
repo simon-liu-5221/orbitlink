@@ -1,14 +1,13 @@
 """FastAPI application factory.
 
-M0 wires only the health router. Feature routers are added per-spec in later
-milestones and always live under ``/api/v1``.
+Feature routers are added per-spec and live under ``/api/v1``.
 """
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
-from app.api.routers import health
+from app.api.routers import analyses, health, projects
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 
@@ -33,6 +32,8 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health.router)
+    app.include_router(projects.router)
+    app.include_router(analyses.router)
 
     return app
 

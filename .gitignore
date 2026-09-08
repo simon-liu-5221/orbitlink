@@ -31,3 +31,4 @@ Thumbs.db
 
 # Fly
 .fly/
+backend/openapi.json

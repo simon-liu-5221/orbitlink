@@ -1,6 +1,6 @@
 # AN-05：分析 job 狀態與進度
 
-**Status**: in-progress
+**Status**: done
 **Actor**: System / Promoter（輪詢進度）
 **相關 ADR**: ADR-0002
 
@@ -70,7 +70,7 @@ queued ─▶ fetching ─▶ building_graph ─▶ analyzing ─▶ persisting 
 - [x] **AC-6** Given 一連串狀態推進，When 讀 progress，Then 值單調遞增、不超過 100 — `test_clamp_progress_*`
 - [x] **AC-7** `analysis_jobs` schema：`status` / `progress` / `heartbeat_at` / `error_code` / timestamps 齊全，時間欄位為 timestamptz — `test_new_job_defaults`
 - [x] **AC-8** Given worker 30 分鐘無心跳，When reaper 執行，Then job 標 `failed` + `error_code = WORKER_TIMEOUT` — `app/jobs/reaper.py`，`test_reaper.py`（含 queued-never-picked-up、不碰終態 job）
-- [ ] **AC-9** Given 進行中的 job，When `GET /jobs/{id}`，Then 回傳合法 status + 0–100 整數 progress — （`feat/PR-01-api`，對應 PR-01 AC-7）
+- [x] **AC-9** Given 進行中的 job，When `GET /jobs/{id}`，Then 回傳合法 status + 0–100 整數 progress — `test_analysis_api.py::test_job_status_is_pollable`（= PR-01 AC-7）
 
 ## Out of scope
 

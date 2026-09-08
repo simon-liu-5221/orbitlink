@@ -37,7 +37,7 @@ commit: feat(AN-01): add multi-resolution louvain detection
 ### Promoter（註冊使用者）
 | ID | 功能 | Status |
 |---|---|---|
-| PR-01 | 上傳 YouTube 連結並啟動分析 | in-progress |
+| PR-01 | 上傳 YouTube 連結並啟動分析 | done |
 | PR-02 | 登入 / 登出 / 記住我 | draft |
 | PR-03 | 重設密碼 | draft |
 | PR-04 | 檢視與更新個人資料 | draft |
@@ -57,7 +57,7 @@ commit: feat(AN-01): add multi-resolution louvain detection
 | AN-02 | 參與度指標 | done |
 | AN-03 | 情緒分析 | done（AC-9 F1 延到 M8）|
 | AN-04 | 影響者辨識 | done |
-| AN-05 | 分析 job 狀態與進度 | in-progress |
+| AN-05 | 分析 job 狀態與進度 | done |
 | AN-06 | 歷史趨勢比較 | draft |
 
 ### Admin
