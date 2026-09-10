@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy.orm import Session
 
-from app.db.models import AnalysisJob, Project, User
+from app.db.models import AnalysisJob, Project
 from app.jobs.reaper import reap_stale_jobs
 from app.jobs.state_machine import JobStatus
+from tests.support.auth import make_user
 
 pytestmark = pytest.mark.integration
 
@@ -18,7 +18,7 @@ pytestmark = pytest.mark.integration
 def _job(
     db: Session, *, status: JobStatus, heartbeat: datetime | None, created: datetime
 ) -> AnalysisJob:
-    project = Project(name="P", user=User(email=f"{uuid.uuid4()}@e.com"))
+    project = Project(name="P", user=make_user(db))
     db.add(project)
     db.flush()
     job = AnalysisJob(

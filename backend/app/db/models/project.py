@@ -20,9 +20,6 @@ if TYPE_CHECKING:
     from app.db.models.job import AnalysisJob
     from app.db.models.user import User
 
-#: Seeded dev project (migration 0002), owned by the dev-placeholder user.
-DEV_PROJECT_ID = uuid.UUID("00000000-0000-0000-0000-000000000002")
-
 
 class Project(Base, TimestampMixin):
     __tablename__ = "projects"

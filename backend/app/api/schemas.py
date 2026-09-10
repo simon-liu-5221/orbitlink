@@ -6,13 +6,54 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class ORMModel(BaseModel):
     """Response models read straight off SQLAlchemy rows."""
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# --- auth (GU-01 / PR-02) ---------------------------------------------
+
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    username: str = Field(min_length=3, max_length=30, pattern=r"^[A-Za-z0-9_.\-]+$")
+    password: str = Field(min_length=1, max_length=200)
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=200)
+    remember_me: bool = False
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+
+class UserOut(ORMModel):
+    id: uuid.UUID
+    email: str
+    username: str
+    email_verified: bool
+    subscription_plan: str
+    trial_ends_at: datetime | None
+    created_at: datetime
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    #: Seconds until the access token expires.
+    expires_in: int
+    user: UserOut
+
+
+class MessageResponse(BaseModel):
+    message: str
 
 
 # --- projects ----------------------------------------------------------

@@ -6,7 +6,8 @@
 
 > M2 分四個 PR 完成：連結解析 + YouTube client（#6）、job 執行串接（#7）、
 > `POST /analyses` 端點與 AC 驗收（#8 `feat/PR-01-api`）。
-> 認證是 M2 的 dev 佔位版（`X-User-Id` header，決定 A1）；真正的 JWT 在 M3（GU-01）。
+> M2 的認證是 dev 佔位版（`X-User-Id` header）；M3 PR #1 已換成真正的 JWT（GU-01 / PR-02），
+> AC-9 隨之補齊。
 
 ## 目的
 
@@ -63,7 +64,7 @@
 - [x] **AC-6** Given YouTube API 回 quota exceeded，When job 執行，Then job 狀態為 failed 且 `error_code=QUOTA_EXCEEDED` — `test_analysis_service.py::test_quota_exceeded_fails_the_job`
 - [x] **AC-7** Given job 執行中，When 呼叫 `GET /jobs/{id}`，Then 回傳的 status 屬於狀態機合法值，progress 為 0–100 整數 — `test_job_status_is_pollable`
 - [x] **AC-8** Given job 進入 completed，When 查詢資料庫，Then 沒有任何一筆記錄含有原始 YouTube channel ID（全部已假名化）— `test_analysis_service.py::test_video_analysis_completes_and_persists_everything` + 真實影片 smoke test（150 則留言，作者全部 HMAC）
-- [~] **AC-9** Given 未認證的請求，When POST，Then 回 401 — `test_unknown_x_user_id_is_401`（M2 dev 佔位：無效 `X-User-Id` → 401；缺 header → dev user。真正的「缺 JWT → 401」在 M3）
+- [x] **AC-9** Given 未認證的請求，When POST，Then 回 401 — `test_requests_without_a_valid_token_are_401`（M3：無 token、亂碼 token、別的金鑰簽的 token、非 Bearer scheme 一律 401）
 - [x] **AC-10** Given 一分鐘內同一 IP 發出 11 次請求，When 第 11 次，Then 回 429 — `test_rate_limit_kicks_in_at_eleven`（redis 固定視窗，SEC-05）
 
 ## Out of scope

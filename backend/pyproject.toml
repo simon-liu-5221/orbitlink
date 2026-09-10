@@ -14,6 +14,10 @@ dependencies = [
     "redis>=5.2",
     "rq>=2.0",
     "httpx>=0.28",
+    # auth (M3)
+    "argon2-cffi>=23.1",
+    "pyjwt>=2.9",
+    "email-validator>=2.2",
     # analysis layer (M1)
     "networkx>=3.4",
     "numpy>=2.1",

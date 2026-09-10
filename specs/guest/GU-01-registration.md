@@ -1,6 +1,6 @@
 # GU-01：註冊帳號
 
-**Status**: specced
+**Status**: done
 **Actor**: Guest
 
 ## 目的
@@ -47,15 +47,15 @@
 
 ## Acceptance Criteria
 
-- [ ] **AC-1** Given 合法輸入，When POST，Then 回 201 且資料庫新增一筆 `email_verified=false` 的使用者
-- [ ] **AC-2** Given 任一註冊，When 查詢資料庫，Then `password_hash` 以 `$argon2id$` 開頭且不等於原始密碼
-- [ ] **AC-3** Given 一個已註冊的 email，When 再次註冊，Then 回應與全新 email 的回應在狀態碼、body 與回應時間上無法區分
-- [ ] **AC-4** Given 密碼少於 12 字元或缺少數字，When POST，Then 回 422 且訊息列出所有未達成的條件（不是只列第一個）
-- [ ] **AC-5** Given 有效的驗證 token，When GET verify，Then `email_verified` 變為 true 且 token 失效無法重用
-- [ ] **AC-6** Given 25 小時前產生的 token，When GET verify，Then 回 410
-- [ ] **AC-7** Given `email_verified=false` 的帳號，When 登入，Then 回 403 且 `error_code=EMAIL_NOT_VERIFIED`
-- [ ] **AC-8** Given 一小時內同一 IP 第 6 次註冊請求，When POST，Then 回 429
-- [ ] **AC-9** Given 註冊成功，When 檢查 `trial_ends_at`，Then 等於建立時間加 30 天
+- [x] **AC-1** Given 合法輸入，When POST，Then 回 201 且資料庫新增一筆 `email_verified=false` 的使用者 — `test_auth_api.py::test_register_creates_an_unverified_trial_user`
+- [x] **AC-2** Given 任一註冊，When 查詢資料庫，Then `password_hash` 以 `$argon2id$` 開頭且不等於原始密碼 — 同上（斷言 hash 以 `$argon2id$` 開頭且不含明文）
+- [x] **AC-3** Given 一個已註冊的 email，When 再次註冊，Then 回應與全新 email 的回應在狀態碼、body 與回應時間上無法區分 — `test_registering_a_known_email_is_indistinguishable`（狀態碼與 body 完全相同；`burn_password_time()` 讓兩條路徑各做一次 argon2 運算）
+- [x] **AC-4** Given 密碼少於 12 字元或缺少數字，When POST，Then 回 422 且訊息列出所有未達成的條件（不是只列第一個） — `test_weak_password_lists_every_unmet_requirement`（`password_policy_errors` 回傳 list 而非第一個錯誤）
+- [x] **AC-5** Given 有效的驗證 token，When GET verify，Then `email_verified` 變為 true 且 token 失效無法重用 — `test_verify_activates_the_account_and_the_token_is_single_use`
+- [x] **AC-6** Given 25 小時前產生的 token，When GET verify，Then 回 410 — `test_expired_verification_token_is_410`
+- [x] **AC-7** Given `email_verified=false` 的帳號，When 登入，Then 回 403 且 `error_code=EMAIL_NOT_VERIFIED` — `test_unverified_account_cannot_sign_in`
+- [x] **AC-8** Given 一小時內同一 IP 第 6 次註冊請求，When POST，Then 回 429 — `test_register_rate_limit_refuses_the_sixth`（redis 固定視窗，5/hr/IP）
+- [x] **AC-9** Given 註冊成功，When 檢查 `trial_ends_at`，Then 等於建立時間加 30 天 — `test_register_creates_an_unverified_trial_user` 一併驗證 `trial_ends_at`
 
 ## Out of scope
 
@@ -69,4 +69,10 @@
 - AC-3 的時間不可區分是重點：不能因為「email 已存在」就跳過雜湊計算，否則回應時間會洩漏帳號存在。已存在時仍執行一次假的雜湊運算
 - 密碼強度規則：至少 12 字元、至少一個數字、至少一個字母。不強制特殊符號（NIST SP 800-63B 建議）
 - 驗證 token 用 `secrets.token_urlsafe(32)`，雜湊後存資料庫，不存明文
-- 開發環境用 MailHog，production 用 Resend 或 SES
+- 開發環境用 MailHog（`docker compose up mailhog`，收件匣 http://localhost:8025），production 用 Resend 或 SES
+
+## 實作結果（M3 PR #1）
+
+- 密碼雜湊 `app/core/security.py`；驗證/重設/refresh 三種一次性 token 共用 `auth_tokens` 表，資料庫只存 SHA-256 digest
+- 寄信是可抽換後端（決定 A1）：預設 `log`（CI 不需任何外部服務），`EMAIL_BACKEND=smtp` 走 MailHog 或正式供應商
+- 註冊流程在 `app/services/auth_service.py`，HTTP 層只負責轉錯誤碼，方便對 AC 做服務層測試

@@ -24,8 +24,25 @@ POST /api/v1/jobs/{job_id}/cancel             cancel a running job
 GET  /api/v1/analyses/{analysis_id}           summary + communities + top participants
 ```
 
-Auth is a placeholder for M2: an `X-User-Id` header names the user; absent → the
-seeded dev user. Real JWT auth is M3 (spec GU-01).
+```
+POST /api/v1/auth/register                    create an account (email confirmation required)
+GET  /api/v1/auth/verify?token=...            confirm the email address
+POST /api/v1/auth/resend-verification         send a fresh confirmation link
+POST /api/v1/auth/login                       access token in the body, refresh token in a cookie
+POST /api/v1/auth/refresh                     rotate the session
+POST /api/v1/auth/logout                      revoke the refresh token
+GET  /api/v1/auth/me                          the signed-in user
+```
+
+Auth (M3, specs GU-01 / PR-02): every endpoint above `/api/v1/auth` needs an
+`Authorization: Bearer <access token>` header. The access token is a 15-minute
+HS256 JWT the frontend keeps in memory; the refresh token is an opaque secret in
+an httpOnly cookie, stored only as a SHA-256 digest and rotated on every use.
+
+Outbound email has a pluggable backend. The default (`EMAIL_BACKEND=log`) writes
+the message to the application log, so nothing external is needed to develop or
+run CI; `EMAIL_BACKEND=smtp` points at MailHog in compose (inbox at
+http://localhost:8025) or a real provider in production.
 
 Sentiment uses a lexicon stand-in by default; `USE_REAL_SENTIMENT_MODEL=true`
 plus `uv pip install transformers torch` switches to XLM-RoBERTa (decision B1).
@@ -50,8 +67,8 @@ installed PostgreSQL / Redis):
 
 ```bash
 docker compose up -d postgres redis           # from the repo root
-export DATABASE_URL="postgresql+psycopg://orbitlink:orbitlink@localhost:55432/orbitlink"
-export REDIS_URL="redis://localhost:56379/0"
+export DATABASE_URL="postgresql+psycopg://orbitlink:orbitlink@localhost:15432/orbitlink"
+export REDIS_URL="redis://localhost:16379/0"
 uv run alembic upgrade head
 uv run pytest                                  # full suite
 ```

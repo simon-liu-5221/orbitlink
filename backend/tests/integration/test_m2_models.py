@@ -5,7 +5,6 @@ Run:  ``pytest -m integration``
 
 from __future__ import annotations
 
-import uuid
 from datetime import UTC, datetime
 
 import pytest
@@ -13,27 +12,18 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.db.models import Analysis, AnalysisJob, Comment, Community, Node, Project, User
-from app.db.models.project import DEV_PROJECT_ID
-from app.db.models.user import DEV_USER_EMAIL, DEV_USER_ID
+from app.db.models import Analysis, AnalysisJob, Comment, Community, Node, Project
 from app.jobs.state_machine import JobStatus
+from tests.support.auth import make_user
 
 pytestmark = pytest.mark.integration
 
 
 def _project(db: Session) -> Project:
-    user = User(email=f"{uuid.uuid4()}@example.com")
-    project = Project(name="Test project", user=user)
+    project = Project(name="Test project", user=make_user(db))
     db.add(project)
     db.flush()
     return project
-
-
-def test_migration_seeds_the_dev_account(db_session: Session) -> None:
-    user = db_session.get(User, DEV_USER_ID)
-    assert user is not None and user.email == DEV_USER_EMAIL
-    project = db_session.get(Project, DEV_PROJECT_ID)
-    assert project is not None and project.user_id == DEV_USER_ID
 
 
 def test_new_job_defaults(db_session: Session) -> None:
