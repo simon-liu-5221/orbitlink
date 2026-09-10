@@ -165,10 +165,16 @@ def test_expired_verification_token_is_410(
     api: TestClient, db_session: Session, outbox: _Outbox
 ) -> None:
     """AC-6 — a link generated 25 hours ago."""
-    _signup(api)
+    email = f"expiry-{uuid.uuid4().hex[:8]}@example.com"
+    _signup(api, email=email)
     token = _token_from_link(outbox)
+    user = db_session.scalar(select(User).where(User.email == email))
+    assert user is not None
     record = db_session.scalar(
-        select(AuthToken).where(AuthToken.purpose == TokenPurpose.EMAIL_VERIFICATION.value)
+        select(AuthToken).where(
+            AuthToken.user_id == user.id,
+            AuthToken.purpose == TokenPurpose.EMAIL_VERIFICATION.value,
+        )
     )
     assert record is not None
     record.expires_at = datetime.now(UTC) - timedelta(hours=1)

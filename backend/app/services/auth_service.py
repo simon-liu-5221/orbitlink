@@ -27,6 +27,7 @@ from app.db.models.user import TRIAL_DAYS
 from app.services.email import (
     EmailBackend,
     already_registered_message,
+    password_reset_message,
     verification_message,
 )
 
@@ -162,6 +163,56 @@ def resend_verification(
     )
 
 
+# --- password reset (PR-03) -----------------------------------------
+
+
+def request_password_reset(
+    db: Session, *, email: str, settings: Settings, email_backend: EmailBackend
+) -> None:
+    """Silent about whether the address has an account (PR-03 AC-2).
+
+    Any earlier unused reset link for this account is invalidated, so only the
+    most recent email works (PR-03 AC-9).
+    """
+    user = db.scalar(select(User).where(User.email == email.strip().lower()).limit(1))
+    if user is None:
+        return
+    _invalidate_tokens(db, user.id, TokenPurpose.PASSWORD_RESET)
+    token = _issue_token(
+        db, user, TokenPurpose.PASSWORD_RESET, timedelta(hours=settings.password_reset_hours)
+    )
+    email_backend.send(
+        password_reset_message(
+            to=user.email,
+            username=user.username,
+            link=f"{settings.frontend_base_url.rstrip('/')}/reset-password?token={token}",
+            hours=settings.password_reset_hours,
+        )
+    )
+
+
+def reset_password(db: Session, *, token: str, new_password: str, settings: Settings) -> User:
+    """Consume the reset token, set the new password, sign every device out.
+
+    The policy check runs *before* the token is consumed, so a rejected weak
+    password leaves the link usable (PR-03 AC-6).
+    """
+    problems = security.password_policy_errors(new_password)
+    if problems:
+        raise WeakPasswordError(problems)
+
+    record = _consume_token(db, token, TokenPurpose.PASSWORD_RESET)
+    user = record.user
+    user.password_hash = security.hash_password(new_password)
+    # Clicking the emailed link proves control of the inbox, same as the
+    # verification link — so an unverified account becomes verified (PR-03 AC-10).
+    user.email_verified = True
+    _invalidate_tokens(db, user.id, TokenPurpose.PASSWORD_RESET)
+    revoke_all_sessions(db, user.id)
+    db.flush()
+    return user
+
+
 # --- sign in ----------------------------------------------------------
 
 
@@ -258,6 +309,20 @@ def _issue_token(db: Session, user: User, purpose: TokenPurpose, ttl: timedelta)
     )
     db.flush()
     return raw
+
+
+def _invalidate_tokens(db: Session, user_id: uuid.UUID, purpose: TokenPurpose) -> None:
+    """Mark every unused token of this purpose spent (PR-03 AC-9)."""
+    now = datetime.now(UTC)
+    for record in db.scalars(
+        select(AuthToken).where(
+            AuthToken.user_id == user_id,
+            AuthToken.purpose == purpose.value,
+            AuthToken.used_at.is_(None),
+        )
+    ):
+        record.used_at = now
+    db.flush()
 
 
 def _consume_token(db: Session, raw: str, purpose: TokenPurpose) -> AuthToken:

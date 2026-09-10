@@ -29,7 +29,7 @@ commit: feat(AN-01): add multi-resolution louvain detection
 ### Guest（未註冊使用者）
 | ID | 功能 | Status |
 |---|---|---|
-| GU-01 | 註冊帳號 | specced |
+| GU-01 | 註冊帳號 | done |
 | GU-02 | 瀏覽首頁與功能介紹 | draft |
 | GU-03 | 檢視使用者評價 | draft |
 | GU-04 | 聯絡支援 | draft |
@@ -38,8 +38,8 @@ commit: feat(AN-01): add multi-resolution louvain detection
 | ID | 功能 | Status |
 |---|---|---|
 | PR-01 | 上傳 YouTube 連結並啟動分析 | done |
-| PR-02 | 登入 / 登出 / 記住我 | draft |
-| PR-03 | 重設密碼 | draft |
+| PR-02 | 登入 / 登出 / 記住我 | done |
+| PR-03 | 重設密碼 | done |
 | PR-04 | 檢視與更新個人資料 | draft |
 | PR-05 | 刪除帳號 | draft |
 | PR-06 | 個人儀表板 | draft |

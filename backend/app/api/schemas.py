@@ -34,6 +34,17 @@ class ResendVerificationRequest(BaseModel):
     email: EmailStr
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=1, max_length=512)
+    #: Strength is checked in the service layer so every unmet rule is reported
+    #: at once (PR-03 AC-6), not just the first Pydantic violation.
+    password: str = Field(min_length=1, max_length=200)
+
+
 class UserOut(ORMModel):
     id: uuid.UUID
     email: str
