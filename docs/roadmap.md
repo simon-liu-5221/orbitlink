@@ -75,9 +75,9 @@
 - [x] 註冊、登入、refresh token、密碼重設 — PR #9（GU-01/PR-02）、PR #10（PR-03）
 - [x] 專案 CRUD、重新命名、封存、搜尋 — PR #11（PR-07）
 - [x] 資源隔離測試（SEC-02，每個端點都要驗 403）— PR #11，參數化測試掃過每個專案端點
-- [ ] 前端：登入頁、專案清單、專案詳情
+- [x] 前端：註冊 / 登入 / 驗證信 / 忘記密碼 / 重設密碼頁、專案清單（搜尋 + 建立 + 封存）、專案詳情（改名 + 刪除 + 啟動分析 + 具名階段的 job 進度）、簡易結果摘要頁 — PR #12（`feat/M3-frontend-auth`）
 
-**驗收**：兩個帳號互相看不到對方的資料，有測試證明。
+**驗收**：✅ 兩個帳號互相看不到對方的資料（後端 SEC-02 參數化測試，PR #11）。前端 auto-refresh API client：401 → 用 httpOnly cookie 換 token → 重送原請求，refresh 也失敗才登出（`client.test.ts`）。完整 compose 走查：註冊 → MailHog 收驗證信 → 登入（cookie 經 Vite proxy 正常）→ 建專案 → 啟動分析 → job `completed` → 封存 → 刪除 → refresh。**M3 完成。**
 
 ---
 
