@@ -28,6 +28,8 @@ GET  /api/v1/analyses/{analysis_id}           summary + communities + top partic
 POST /api/v1/auth/register                    create an account (email confirmation required)
 GET  /api/v1/auth/verify?token=...            confirm the email address
 POST /api/v1/auth/resend-verification         send a fresh confirmation link
+POST /api/v1/auth/forgot-password             email a one-time password-reset link
+POST /api/v1/auth/reset-password              set a new password, sign every device out
 POST /api/v1/auth/login                       access token in the body, refresh token in a cookie
 POST /api/v1/auth/refresh                     rotate the session
 POST /api/v1/auth/logout                      revoke the refresh token

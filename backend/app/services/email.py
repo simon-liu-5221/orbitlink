@@ -101,3 +101,18 @@ def already_registered_message(*, to: str) -> Message:
             "forgotten it. If it wasn't, you can ignore this email.\n"
         ),
     )
+
+
+def password_reset_message(*, to: str, username: str, link: str, hours: int) -> Message:
+    return Message(
+        to=to,
+        subject="Reset your OrbitLink password",
+        body=(
+            f"Hi {username},\n\n"
+            "Someone asked to reset the password on your OrbitLink account. Follow "
+            "this link to choose a new one:\n\n"
+            f"{link}\n\n"
+            f"The link works for {hours} hour(s) and can be used once. If you didn't "
+            "ask for this, ignore this email — your password stays as it is.\n"
+        ),
+    )

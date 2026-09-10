@@ -19,14 +19,17 @@ from app.api.deps import (
     DbSession,
     Email,
     RefreshCookie,
+    rate_limit_forgot_password,
     rate_limit_login,
     rate_limit_register,
 )
 from app.api.schemas import (
+    ForgotPasswordRequest,
     LoginRequest,
     MessageResponse,
     RegisterRequest,
     ResendVerificationRequest,
+    ResetPasswordRequest,
     TokenResponse,
     UserOut,
 )
@@ -134,6 +137,65 @@ def resend_verification(
     db.commit()
     # Same answer whether the address exists, is unknown, or is already verified.
     return MessageResponse(message="if that address needs confirming, a new link is on its way")
+
+
+@router.post(
+    "/forgot-password",
+    response_model=MessageResponse,
+    dependencies=[Depends(rate_limit_forgot_password)],
+)
+def forgot_password(
+    body: ForgotPasswordRequest,
+    db: DbSession,
+    settings: AppSettings,
+    email_backend: Email,
+) -> MessageResponse:
+    auth_service.request_password_reset(
+        db, email=str(body.email), settings=settings, email_backend=email_backend
+    )
+    db.commit()
+    # Same answer whether or not that address has an account (PR-03 AC-2).
+    return MessageResponse(message="if that address has an account, a reset link is on its way")
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+def reset_password(
+    body: ResetPasswordRequest,
+    db: DbSession,
+    settings: AppSettings,
+) -> MessageResponse:
+    try:
+        auth_service.reset_password(
+            db, token=body.token, new_password=body.password, settings=settings
+        )
+    except auth_service.WeakPasswordError as exc:
+        db.rollback()
+        raise HTTPException(
+            422,  # renamed in newer starlette; the number is the stable name
+            detail={
+                "error_code": "WEAK_PASSWORD",
+                "message": str(exc),
+                "problems": exc.problems,
+            },
+        ) from exc
+    except auth_service.ExpiredTokenError as exc:
+        db.rollback()
+        raise HTTPException(
+            status.HTTP_410_GONE,
+            detail={
+                "error_code": "TOKEN_EXPIRED",
+                "message": "this link has expired, request a new one",
+            },
+        ) from exc
+    except auth_service.InvalidTokenError as exc:
+        db.rollback()
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail={"error_code": "TOKEN_INVALID", "message": "this link is not valid"},
+        ) from exc
+
+    db.commit()
+    return MessageResponse(message="password changed, sign in with your new password")
 
 
 @router.post("/login", response_model=TokenResponse, dependencies=[Depends(rate_limit_login)])

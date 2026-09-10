@@ -116,3 +116,6 @@ rate_limit_analyses = rate_limiter("analyses", limit=10, window_seconds=60)
 rate_limit_register = rate_limiter("register", limit=5, window_seconds=3600)
 #: Sign-in attempts, to slow credential stuffing.
 rate_limit_login = rate_limiter("login", limit=10, window_seconds=60)
+#: Password-reset requests, so the endpoint cannot be used to spray a mailbox
+#: or to probe which addresses have accounts (PR-03 AC-11).
+rate_limit_forgot_password = rate_limiter("forgot_password", limit=5, window_seconds=3600)
