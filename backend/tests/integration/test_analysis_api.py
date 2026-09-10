@@ -17,10 +17,11 @@ from sqlalchemy.orm import Session
 
 from app.api import deps
 from app.api.routers import analyses as analyses_router
+from app.core.config import Settings
 from app.db.models import Analysis, AnalysisJob, Community, Node, Project, User
-from app.db.models.user import DEV_USER_ID
 from app.jobs.state_machine import JobStatus
 from app.main import create_app
+from tests.support.auth import bearer, make_user
 
 pytestmark = pytest.mark.integration
 
@@ -45,19 +46,18 @@ def fake_queue(monkeypatch: pytest.MonkeyPatch) -> _FakeQueue:
 
 
 @pytest.fixture
-def api(db_session: Session) -> TestClient:
-    app = create_app()
-    app.dependency_overrides[deps.get_db] = lambda: db_session
-    app.dependency_overrides[deps.rate_limit_analyses] = lambda: None
-    with TestClient(app) as client:
-        return client
+def user(db_session: Session) -> User:
+    return make_user(db_session)
 
 
 @pytest.fixture
-def dev_user(db_session: Session) -> User:
-    user = db_session.get(User, DEV_USER_ID)
-    assert user is not None
-    return user
+def api(db_session: Session, user: User) -> TestClient:
+    """A client already signed in as ``user`` (M3: a real bearer token)."""
+    app = create_app()
+    app.dependency_overrides[deps.get_db] = lambda: db_session
+    app.dependency_overrides[deps.rate_limit_analyses] = lambda: None
+    with TestClient(app, headers=bearer(user)) as client:
+        return client
 
 
 def _project(db: Session, user: User) -> Project:
@@ -68,9 +68,9 @@ def _project(db: Session, user: User) -> Project:
 
 
 def test_start_analysis_returns_202_with_a_queued_job(
-    api: TestClient, db_session: Session, dev_user: User, fake_queue: _FakeQueue
+    api: TestClient, db_session: Session, user: User, fake_queue: _FakeQueue
 ) -> None:
-    project = _project(db_session, dev_user)
+    project = _project(db_session, user)
     resp = api.post(
         f"/api/v1/projects/{project.id}/analyses",
         json={"source_url": "https://youtu.be/dQw4w9WgXcQ"},
@@ -84,9 +84,9 @@ def test_start_analysis_returns_202_with_a_queued_job(
 
 
 def test_bad_url_returns_422_with_error_code(
-    api: TestClient, db_session: Session, dev_user: User, fake_queue: _FakeQueue
+    api: TestClient, db_session: Session, user: User, fake_queue: _FakeQueue
 ) -> None:
-    project = _project(db_session, dev_user)
+    project = _project(db_session, user)
     resp = api.post(
         f"/api/v1/projects/{project.id}/analyses", json={"source_url": "https://vimeo.com/1"}
     )
@@ -95,9 +95,9 @@ def test_bad_url_returns_422_with_error_code(
 
 
 def test_over_the_comment_cap_returns_422(
-    api: TestClient, db_session: Session, dev_user: User, fake_queue: _FakeQueue
+    api: TestClient, db_session: Session, user: User, fake_queue: _FakeQueue
 ) -> None:
-    project = _project(db_session, dev_user)
+    project = _project(db_session, user)
     resp = api.post(
         f"/api/v1/projects/{project.id}/analyses",
         json={"source_url": "https://youtu.be/dQw4w9WgXcQ", "max_comments": 999999},
@@ -107,9 +107,9 @@ def test_over_the_comment_cap_returns_422(
 
 
 def test_second_live_job_returns_409(
-    api: TestClient, db_session: Session, dev_user: User, fake_queue: _FakeQueue
+    api: TestClient, db_session: Session, user: User, fake_queue: _FakeQueue
 ) -> None:
-    project = _project(db_session, dev_user)
+    project = _project(db_session, user)
     url = "https://youtu.be/dQw4w9WgXcQ"
     assert (
         api.post(f"/api/v1/projects/{project.id}/analyses", json={"source_url": url}).status_code
@@ -123,9 +123,7 @@ def test_second_live_job_returns_409(
 def test_another_users_project_is_403_and_does_not_leak_existence(
     api: TestClient, db_session: Session, fake_queue: _FakeQueue
 ) -> None:
-    other = User(email=f"{uuid.uuid4()}@e.com")
-    db_session.add(other)
-    db_session.flush()
+    other = make_user(db_session)
     their_project = _project(db_session, other)
 
     real = api.post(
@@ -139,29 +137,39 @@ def test_another_users_project_is_403_and_does_not_leak_existence(
     assert real.status_code == missing.status_code == 403
 
 
-def test_unknown_x_user_id_is_401(
-    api: TestClient, db_session: Session, dev_user: User, fake_queue: _FakeQueue
+def test_requests_without_a_valid_token_are_401(
+    api: TestClient, db_session: Session, user: User, fake_queue: _FakeQueue
 ) -> None:
-    project = _project(db_session, dev_user)
-    unknown = api.post(
-        f"/api/v1/projects/{project.id}/analyses",
-        json={"source_url": "https://youtu.be/dQw4w9WgXcQ"},
-        headers={"X-User-Id": str(uuid.uuid4())},
+    """PR-01 AC-9, now for real: no token, junk token, wrong signature."""
+    project = _project(db_session, user)
+    url = f"/api/v1/projects/{project.id}/analyses"
+    body = {"source_url": "https://youtu.be/dQw4w9WgXcQ"}
+
+    anonymous = api.post(url, json=body, headers={"Authorization": ""})
+    junk = api.post(url, json=body, headers={"Authorization": "Bearer not-a-jwt"})
+    wrong_key = api.post(
+        url,
+        json=body,
+        headers=bearer(user, Settings(_env_file=None, jwt_secret="a-different-secret")),
     )
-    malformed = api.get("/api/v1/projects", headers={"X-User-Id": "not-a-uuid"})
-    assert unknown.status_code == 401
-    assert malformed.status_code == 401
+    basic = api.get("/api/v1/projects", headers={"Authorization": "Basic Zm9vOmJhcg=="})
+
+    assert [r.status_code for r in (anonymous, junk, wrong_key, basic)] == [401, 401, 401, 401]
 
 
-def test_real_get_db_dependency_is_wired(db_session: Session) -> None:
-    # a client with no get_db override — exercises the real generator dependency
-    app = create_app()
+def test_token_for_a_deleted_user_is_401(api: TestClient, db_session: Session) -> None:
+    """Also exercises the real get_db generator — no override on this client."""
+    ghost = make_user(db_session)
+    db_session.delete(ghost)
+    db_session.flush()
+
+    app = create_app()  # deliberately no dependency_overrides
     with TestClient(app) as client:
-        assert client.get("/api/v1/projects").status_code == 200
+        assert client.get("/api/v1/projects", headers=bearer(ghost)).status_code == 401
 
 
-def test_job_status_is_pollable(api: TestClient, db_session: Session, dev_user: User) -> None:
-    project = _project(db_session, dev_user)
+def test_job_status_is_pollable(api: TestClient, db_session: Session, user: User) -> None:
+    project = _project(db_session, user)
     job = AnalysisJob(
         project=project,
         source_url="u",
@@ -183,8 +191,8 @@ def test_job_status_is_pollable(api: TestClient, db_session: Session, dev_user: 
     assert 0 <= body["progress"] <= 100
 
 
-def test_cancel_marks_job_cancelled(api: TestClient, db_session: Session, dev_user: User) -> None:
-    project = _project(db_session, dev_user)
+def test_cancel_marks_job_cancelled(api: TestClient, db_session: Session, user: User) -> None:
+    project = _project(db_session, user)
     job = AnalysisJob(
         project=project,
         source_url="u",
@@ -209,9 +217,9 @@ def test_cancel_marks_job_cancelled(api: TestClient, db_session: Session, dev_us
 
 
 def test_get_analysis_returns_summary_and_top_participants(
-    api: TestClient, db_session: Session, dev_user: User
+    api: TestClient, db_session: Session, user: User
 ) -> None:
-    project = _project(db_session, dev_user)
+    project = _project(db_session, user)
     job = AnalysisJob(
         project=project,
         source_url="u",
@@ -249,7 +257,7 @@ def test_get_analysis_returns_summary_and_top_participants(
     assert len(body["communities"]) == 1
 
 
-def test_project_create_list_get(api: TestClient, db_session: Session, dev_user: User) -> None:
+def test_project_create_list_get(api: TestClient, db_session: Session, user: User) -> None:
     created = api.post("/api/v1/projects", json={"name": "My channel study"})
     assert created.status_code == 201
     project_id = created.json()["id"]
@@ -260,9 +268,7 @@ def test_project_create_list_get(api: TestClient, db_session: Session, dev_user:
 
 
 def test_project_of_another_user_is_403(api: TestClient, db_session: Session) -> None:
-    other = User(email=f"{uuid.uuid4()}@e.com")
-    db_session.add(other)
-    db_session.flush()
+    other = make_user(db_session)
     theirs = _project(db_session, other)
     assert api.get(f"/api/v1/projects/{theirs.id}").status_code == 403
 
@@ -273,14 +279,14 @@ def test_missing_job_and_analysis_are_404(api: TestClient) -> None:
 
 
 def test_enqueue_failure_marks_job_failed_and_returns_503(
-    api: TestClient, db_session: Session, dev_user: User, monkeypatch: pytest.MonkeyPatch
+    api: TestClient, db_session: Session, user: User, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     class _BrokenQueue:
         def enqueue(self, *_a: Any, **_k: Any) -> Any:
             raise RuntimeError("redis down")
 
     monkeypatch.setattr(analyses_router, "get_queue", lambda: _BrokenQueue())
-    project = _project(db_session, dev_user)
+    project = _project(db_session, user)
     resp = api.post(
         f"/api/v1/projects/{project.id}/analyses",
         json={"source_url": "https://youtu.be/dQw4w9WgXcQ"},
@@ -294,7 +300,7 @@ def test_enqueue_failure_marks_job_failed_and_returns_503(
 
 
 def test_rate_limit_kicks_in_at_eleven(
-    db_session: Session, dev_user: User, fake_queue: _FakeQueue
+    db_session: Session, user: User, fake_queue: _FakeQueue
 ) -> None:
     from app.jobs.queue import get_redis
 
@@ -305,7 +311,7 @@ def test_rate_limit_kicks_in_at_eleven(
 
     app = create_app()
     app.dependency_overrides[deps.get_db] = lambda: db_session  # real rate_limit dependency
-    project = _project(db_session, dev_user)
+    project = _project(db_session, user)
     with TestClient(app) as client:
         codes = [
             client.post(

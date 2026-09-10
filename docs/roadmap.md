@@ -26,7 +26,7 @@
 **驗收**：✅ production URL `https://orbitlink-web.onrender.com` 打開顯示 OrbitLink 頁面與 database / redis 兩顆綠燈；`/healthz` 回 `status: ok`；CORS 正確；GitHub Actions 全綠。**M0 完成。**
 
 > 已知限制（延到後續里程碑）：Render free 15 分鐘休眠 + ~50s 冷啟動（AVAIL-01 暫緩，見 nfr.md）；RQ worker 未部署（Render 無免費 worker，M2 決定付費或搬遷）。
-> 本機 compose 把 Postgres / Redis 發佈在 host 的 55432 / 56379（避開本機已安裝的 PostgreSQL 16）；container 之間仍是 5432 / 6379。
+> 本機 compose 把 Postgres / Redis 發佈在 host 的 15432 / 16379（避開本機已安裝的 PostgreSQL 16）；container 之間仍是 5432 / 6379。
 
 > 這一週看起來沒有功能，但它是整個專案能不能收尾的關鍵。原 FYP 沒有這一步，所以測試只能在 localhost 手動做。
 

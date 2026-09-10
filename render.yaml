@@ -35,6 +35,15 @@ services:
         sync: false          # ["https://orbitlink-web.onrender.com"]
       - key: YOUTUBE_API_KEY
         sync: false          # blank until M2
+      # --- M3 auth ---
+      - key: FRONTEND_BASE_URL
+        value: https://orbitlink-web.onrender.com   # where verification links point
+      - key: EMAIL_BACKEND
+        value: log           # M3 ships the log backend; swap to smtp with a provider
+      - key: COOKIE_SECURE
+        value: "true"        # the refresh cookie is HTTPS-only in production
+      - key: COOKIE_SAMESITE
+        value: lax           # safe because /api is same-origin — see the rewrite below
 
   - type: web
     name: orbitlink-web
@@ -44,8 +53,14 @@ services:
     autoDeploy: true
     envVars:
       - key: VITE_API_BASE_URL
-        sync: false          # https://orbitlink-api.onrender.com
+        value: ""            # same-origin: the /api rewrite below reaches the API
     routes:
+      # Decision B1: the browser only ever talks to orbitlink-web, so the refresh
+      # cookie is first-party (SameSite=Lax, no CORS credentials dance). Must come
+      # before the SPA fallback or /api/* would render index.html.
+      - type: rewrite
+        source: /api/*
+        destination: https://orbitlink-api-nooj.onrender.com/api/*
       - type: rewrite
         source: /*
         destination: /index.html

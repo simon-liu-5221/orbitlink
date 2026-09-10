@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from app.analysis.sentiment import SentimentAnalyzer
 from app.analysis.sentiment_lexicon import lexicon_predict
 from app.core.config import Settings
-from app.db.models import Analysis, AnalysisJob, Comment, Community, Node, Project, User
+from app.db.models import Analysis, AnalysisJob, Comment, Community, Node, Project
 from app.ingest.youtube import YouTubeTarget
 from app.jobs.state_machine import JobStatus
 from app.services.analysis_service import (
@@ -25,6 +25,7 @@ from app.services.analysis_service import (
     create_job,
     run_analysis,
 )
+from tests.support.auth import make_user
 from tests.support.youtube_fake import FakeYouTube, api_error, thread
 
 pytestmark = pytest.mark.integration
@@ -35,7 +36,7 @@ _MODEL = SentimentModel(analyzer=SentimentAnalyzer(lexicon_predict), label="lexi
 
 
 def _project(db: Session) -> Project:
-    project = Project(name="P", user=User(email=f"{uuid.uuid4()}@e.com"))
+    project = Project(name="P", user=make_user(db))
     db.add(project)
     db.flush()
     return project

@@ -14,9 +14,10 @@ services:
       POSTGRES_PASSWORD: orbitlink
       POSTGRES_DB: orbitlink
     ports:
-      # Host port 55432 to avoid clashing with a locally-installed PostgreSQL.
+      # Host port 15432: avoids a locally-installed PostgreSQL, and sits below
+      # 49152 so Windows' dynamic-port reservations can never squat on it.
       # Inside the compose network the port is still 5432 (host "postgres").
-      - "55432:5432"
+      - "15432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -28,13 +29,22 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      # Host port 56379 to avoid clashing with a local Redis/Memurai.
-      - "56379:6379"
+      # Host port 16379, same reasoning as PostgreSQL above.
+      - "16379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
+
+  # Catches every outbound email locally. Inbox at http://localhost:8025.
+  # Only used when EMAIL_BACKEND=smtp — the default "log" backend needs nothing
+  # running at all (decision A1).
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # web inbox
 
   api:
     build: ./backend
@@ -46,6 +56,10 @@ services:
       DATABASE_URL: postgresql+psycopg://orbitlink:orbitlink@postgres:5432/orbitlink
       REDIS_URL: redis://redis:6379/0
       CORS_ORIGINS: '["http://localhost:5173"]'
+      FRONTEND_BASE_URL: http://localhost:5173
+      EMAIL_BACKEND: smtp
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
       JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-change-me}
       PSEUDONYM_KEY: ${PSEUDONYM_KEY:-dev-only-insecure-change-me}
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
@@ -59,6 +73,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      mailhog:
+        condition: service_started
 
   worker:
     build: ./backend
