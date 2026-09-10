@@ -14,15 +14,25 @@ uv run python -m app.jobs.worker     # NOT `rq worker` — needs the startup rea
 The worker auto-selects `SimpleWorker` on Windows (no `os.fork`); Linux uses the
 default forking `Worker`.
 
-## Analysis API (M2, spec PR-01)
+## Project & analysis API (specs PR-07, PR-01)
 
 ```
-POST /api/v1/projects                         create a project
-POST /api/v1/projects/{id}/analyses           -> 202 { job_id }   (start an analysis)
-GET  /api/v1/jobs/{job_id}                     poll status + progress
-POST /api/v1/jobs/{job_id}/cancel             cancel a running job
-GET  /api/v1/analyses/{analysis_id}           summary + communities + top participants
+POST   /api/v1/projects                       create a project
+GET    /api/v1/projects?q=&include_archived=  list / search your projects
+GET    /api/v1/projects/{id}                  one project
+PATCH  /api/v1/projects/{id}                  rename
+POST   /api/v1/projects/{id}/archive          soft-archive (reversible, hidden from the default list)
+POST   /api/v1/projects/{id}/unarchive        restore
+DELETE /api/v1/projects/{id}                  permanent; cascades; 409 if a job is running
+GET    /api/v1/projects/{id}/jobs             this project's analysis-job history
+POST   /api/v1/projects/{id}/analyses         -> 202 { job_id }   (start an analysis)
+GET    /api/v1/jobs/{job_id}                  poll status + progress
+POST   /api/v1/jobs/{job_id}/cancel           cancel a running job
+GET    /api/v1/analyses/{analysis_id}         summary + communities + top participants
 ```
+
+Every project-scoped route answers 403 identically whether the project belongs
+to another user or does not exist (NFR SEC-02).
 
 ```
 POST /api/v1/auth/register                    create an account (email confirmation required)

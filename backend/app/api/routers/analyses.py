@@ -187,19 +187,7 @@ def _owned_job(db: DbSession, job_id: uuid.UUID, user: User) -> AnalysisJob:
 
 
 def _job_out(job: AnalysisJob) -> JobStatusOut:
-    return JobStatusOut(
-        id=job.id,
-        project_id=job.project_id,
-        status=job.status,
-        progress=job.progress,
-        error_code=job.error_code,
-        error_message=job.error_message,
-        analysis_id=job.analysis.id if job.analysis else None,
-        created_at=job.created_at,
-        updated_at=job.updated_at,
-        started_at=job.started_at,
-        finished_at=job.finished_at,
-    )
+    return JobStatusOut.from_job(job)
 
 
 def _community_out(c: Community) -> CommunityOut:
