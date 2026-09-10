@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Annotated, Any
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints
+
+if TYPE_CHECKING:
+    from app.db.models import AnalysisJob
 
 
 class ORMModel(BaseModel):
@@ -69,14 +72,23 @@ class MessageResponse(BaseModel):
 
 # --- projects ----------------------------------------------------------
 
+#: A project name with surrounding whitespace trimmed; empty after the trim
+#: is rejected before it reaches the service layer (PR-07 AC-2).
+ProjectName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+
 
 class ProjectCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=200)
+    name: ProjectName
+
+
+class ProjectRename(BaseModel):
+    name: ProjectName
 
 
 class ProjectOut(ORMModel):
     id: uuid.UUID
     name: str
+    archived_at: datetime | None
     created_at: datetime
 
 
@@ -106,6 +118,22 @@ class JobStatusOut(BaseModel):
     updated_at: datetime
     started_at: datetime | None
     finished_at: datetime | None
+
+    @classmethod
+    def from_job(cls, job: AnalysisJob) -> JobStatusOut:
+        return cls(
+            id=job.id,
+            project_id=job.project_id,
+            status=job.status,
+            progress=job.progress,
+            error_code=job.error_code,
+            error_message=job.error_message,
+            analysis_id=job.analysis.id if job.analysis else None,
+            created_at=job.created_at,
+            updated_at=job.updated_at,
+            started_at=job.started_at,
+            finished_at=job.finished_at,
+        )
 
 
 # --- results --------------------------------------------------------
