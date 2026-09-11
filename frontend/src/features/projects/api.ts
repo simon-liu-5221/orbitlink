@@ -5,6 +5,7 @@ type Schemas = components["schemas"];
 export type Project = Schemas["ProjectOut"];
 export type Job = Schemas["JobStatusOut"];
 export type Analysis = Schemas["AnalysisOut"];
+export type AnalysisGraph = Schemas["AnalysisGraphOut"];
 
 export interface ListProjectsParams {
   q?: string;
@@ -58,4 +59,7 @@ export const projectsApi = {
 
   analysis: (analysisId: string) =>
     apiRequest<Analysis>(`/api/v1/analyses/${analysisId}`),
+
+  analysisGraph: (analysisId: string) =>
+    apiRequest<AnalysisGraph>(`/api/v1/analyses/${analysisId}/graph`),
 };

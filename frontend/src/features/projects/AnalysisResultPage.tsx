@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 
@@ -7,9 +8,18 @@ import { FormError, Spinner } from "@/components/ui";
 
 import { projectsApi } from "./api";
 
+// Cytoscape is a heavy dependency (PERF-05: LCP < 2.5s) — keep it out of the
+// initial bundle and only fetch it when someone actually opens a result page.
+const NetworkGraphSection = lazy(() =>
+  import("@/features/graph/NetworkGraphSection").then((m) => ({
+    default: m.NetworkGraphSection,
+  })),
+);
+
 /**
- * A plain summary of one analysis. The interactive network graph and charts are
- * M4 (spec PR-10); this is enough to confirm a run produced real numbers.
+ * The analysis result page: summary stats, the interactive network graph
+ * (PR-10), and the top-participant lists. Charts (sentiment distribution /
+ * trend / engagement scatter) are a separate, smaller M4 PR.
  */
 export function AnalysisResultPage() {
   const { analysisId = "" } = useParams();
@@ -51,7 +61,7 @@ export function AnalysisResultPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-3xl space-y-6 p-6">
+      <div className="mx-auto max-w-5xl space-y-6 p-6">
         <Link
           to={`/projects/${a.project_id}`}
           className="text-sm text-slate-500 underline"
@@ -83,6 +93,21 @@ export function AnalysisResultPage() {
             </div>
           ))}
         </dl>
+
+        <section>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Network graph
+          </h2>
+          <Suspense
+            fallback={
+              <div className="flex justify-center p-8 text-slate-400">
+                <Spinner />
+              </div>
+            }
+          >
+            <NetworkGraphSection analysisId={a.id} />
+          </Suspense>
+        </section>
 
         <section>
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
