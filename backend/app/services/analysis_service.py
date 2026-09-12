@@ -256,6 +256,18 @@ def _sentiment_frame(frame: pd.DataFrame, node_communities: dict[str, int]) -> p
 # --- persistence ------------------------------------------------
 
 
+def _serialize_edges(graph: Any) -> list[dict[str, Any]]:
+    """The interaction graph's edges, as a JSON-safe list (PR-10).
+
+    Written once here from the graph already built for this job — the graph
+    view endpoint reads this back rather than rebuilding it from ``comments``.
+    """
+    return [
+        {"source": str(source), "target": str(target), "weight": int(data.get("weight", 1))}
+        for source, target, data in graph.edges(data=True)
+    ]
+
+
 def _persist(
     session: Session,
     job: AnalysisJob,
@@ -285,6 +297,7 @@ def _persist(
         period_end=graph.graph.get("end"),
         sentiment_summary=_sentiment_summary(sentiment_result, model_label),
         params_snapshot=dict(job.params),
+        graph_edges=_serialize_edges(graph),
     )
     session.add(analysis)
     session.flush()

@@ -1,9 +1,10 @@
-"""Analysis endpoints (spec PR-01).
+"""Analysis endpoints (specs PR-01, PR-10).
 
 POST /api/v1/projects/{id}/analyses   -> 202 { job_id }
 GET  /api/v1/jobs/{job_id}            -> status + progress (poll every 2s)
 POST /api/v1/jobs/{job_id}/cancel     -> mark cancelled
 GET  /api/v1/analyses/{analysis_id}   -> summary + communities + top participants
+GET  /api/v1/analyses/{analysis_id}/graph -> every node + edge, for the network graph
 """
 
 from __future__ import annotations
@@ -17,8 +18,10 @@ from sqlalchemy import select
 from app.api.deps import AppSettings, CurrentUser, DbSession, rate_limit_analyses
 from app.api.schemas import (
     AnalysisCreate,
+    AnalysisGraphOut,
     AnalysisOut,
     CommunityOut,
+    GraphEdgeOut,
     JobAccepted,
     JobStatusOut,
     NodeOut,
@@ -129,11 +132,17 @@ def cancel_job(job_id: uuid.UUID, db: DbSession, user: CurrentUser) -> JobStatus
     return _job_out(job)
 
 
-@router.get("/analyses/{analysis_id}", response_model=AnalysisOut)
-def get_analysis(analysis_id: uuid.UUID, db: DbSession, user: CurrentUser) -> AnalysisOut:
+def _owned_analysis(db: DbSession, analysis_id: uuid.UUID, user: User) -> Analysis:
     analysis = db.get(Analysis, analysis_id)
     if analysis is None or analysis.project.user_id != user.id:
+        # same response whether it doesn't exist or isn't theirs
         raise HTTPException(status.HTTP_404_NOT_FOUND, "analysis not found")
+    return analysis
+
+
+@router.get("/analyses/{analysis_id}", response_model=AnalysisOut)
+def get_analysis(analysis_id: uuid.UUID, db: DbSession, user: CurrentUser) -> AnalysisOut:
+    analysis = _owned_analysis(db, analysis_id, user)
 
     communities = db.scalars(
         select(Community)
@@ -173,6 +182,29 @@ def get_analysis(analysis_id: uuid.UUID, db: DbSession, user: CurrentUser) -> An
         communities=[_community_out(c) for c in communities],
         top_influencers=[_node_out(n) for n in influencers],
         top_engaged=[_node_out(n) for n in engaged],
+    )
+
+
+@router.get("/analyses/{analysis_id}/graph", response_model=AnalysisGraphOut)
+def get_analysis_graph(
+    analysis_id: uuid.UUID, db: DbSession, user: CurrentUser
+) -> AnalysisGraphOut:
+    """Every node and edge (PR-10) — unlike ``get_analysis``, not just the top 20.
+
+    Edges were serialized once at analysis time (``analysis_service._serialize_edges``),
+    so this is a plain read: no graph is rebuilt here.
+    """
+    analysis = _owned_analysis(db, analysis_id, user)
+
+    nodes = db.scalars(
+        select(Node).where(Node.analysis_id == analysis.id).order_by(Node.pagerank.desc())
+    ).all()
+
+    return AnalysisGraphOut(
+        nodes=[_node_out(n) for n in nodes],
+        edges=[GraphEdgeOut(**edge) for edge in analysis.graph_edges],
+        node_count=analysis.node_count,
+        edge_count=analysis.edge_count,
     )
 
 

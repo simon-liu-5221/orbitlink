@@ -46,7 +46,7 @@ commit: feat(AN-01): add multi-resolution louvain detection
 | PR-07 | 專案 CRUD（建立 / 重新命名 / 開啟 / 封存 / 刪除） | draft |
 | PR-08 | 專案搜尋與篩選 | draft |
 | PR-09 | 專案備註 | draft |
-| PR-10 | 檢視網路圖 | draft |
+| PR-10 | 檢視網路圖 | done |
 | PR-11 | 匯出圖形（PNG / PDF / CSV） | draft |
 | PR-12 | 提交回饋與評分 | draft |
 

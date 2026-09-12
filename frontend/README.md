@@ -42,9 +42,29 @@ src/
     auth/       store, api, session, RequireAuth, and the 5 auth pages
     projects/   api, ProjectsPage, ProjectDetailPage, JobProgress,
                 AnalysisResultPage, jobStatus.ts (ADR-0002 stage labels)
+    graph/      NetworkGraph (Cytoscape), NodeDetailPanel, GraphControls,
+                graphData.ts — pure sampling/filtering/color/size (PR-10)
     health/     the M0 status widget, now at /status
   test/         utils.tsx — renderWithProviders, jsonResponse
 ```
+
+## The network graph (PR-10)
+
+`AnalysisResultPage` lazy-loads `NetworkGraphSection` (Cytoscape is heavy —
+PERF-05 wants a fast initial LCP, so it's a separate chunk fetched only when
+someone opens a result page). Everything with real logic lives in
+`graphData.ts` as plain functions with no DOM or Cytoscape dependency, so it's
+unit-tested without a canvas:
+
+- `sampleTopByPagerank` — past 2,000 nodes, keep only the top-PageRank ones and
+  the edges between them (CAP-03)
+- `filterGraph` — the min-degree / community / sentiment-range filters
+- `communityColor` / `nodeRadius` — the color and size encodings
+
+`NetworkGraph.tsx` itself is a thin Cytoscape wrapper; its test mocks
+`cytoscape` entirely (jsdom has no canvas) and checks the wiring — the right
+elements go in, a tap reaches the callback — while the actual rendering only
+gets exercised by hand in a real browser.
 
 ## Routes
 
@@ -55,4 +75,4 @@ src/
 | `/status` | public | backend health (M0) |
 | `/` | require auth | project list + search + create |
 | `/projects/:projectId` | require auth | rename, delete, start analysis, job progress |
-| `/analyses/:analysisId` | require auth | plain result summary (the graph is M4) |
+| `/analyses/:analysisId` | require auth | result summary + interactive network graph (PR-10) |

@@ -330,6 +330,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analyses/{analysis_id}/graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Analysis Graph
+         * @description Every node and edge (PR-10) — unlike ``get_analysis``, not just the top 20.
+         *
+         *     Edges were serialized once at analysis time (``analysis_service._serialize_edges``),
+         *     so this is a plain read: no graph is rebuilt here.
+         */
+        get: operations["get_analysis_graph_api_v1_analyses__analysis_id__graph_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -342,6 +365,17 @@ export interface components {
             max_comments?: number | null;
             /** Channel Video Count */
             channel_video_count?: number | null;
+        };
+        /** AnalysisGraphOut */
+        AnalysisGraphOut: {
+            /** Nodes */
+            nodes: components["schemas"]["NodeOut"][];
+            /** Edges */
+            edges: components["schemas"]["GraphEdgeOut"][];
+            /** Node Count */
+            node_count: number;
+            /** Edge Count */
+            edge_count: number;
         };
         /** AnalysisOut */
         AnalysisOut: {
@@ -426,6 +460,15 @@ export interface components {
              * Format: email
              */
             email: string;
+        };
+        /** GraphEdgeOut */
+        GraphEdgeOut: {
+            /** Source */
+            source: string;
+            /** Target */
+            target: string;
+            /** Weight */
+            weight: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1318,6 +1361,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AnalysisOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_analysis_graph_api_v1_analyses__analysis_id__graph_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                analysis_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysisGraphOut"];
                 };
             };
             /** @description Validation Error */

@@ -85,14 +85,14 @@
 
 這是 demo 時第一眼看到的東西，值得多花時間。
 
-- [ ] Cytoscape.js 網路圖：力導向佈局、社群上色、節點大小依 PageRank
-- [ ] 節點點擊顯示側欄詳情
-- [ ] 篩選：最小 degree、社群、情緒區間
+- [x] Cytoscape.js 網路圖：力導向佈局、社群上色、節點大小依 PageRank — PR #13（PR-10），`GET /analyses/{id}/graph` + `graph_edges` 快照
+- [x] 節點點擊顯示側欄詳情 — PR #13
+- [x] 篩選：最小 degree、社群、情緒區間 — PR #13，純函式 `filterGraph`
 - [ ] Recharts：情緒分布、時間走勢、參與度散點圖
-- [ ] 大圖降級策略（CAP-03）
-- [ ] 分析進行中的階段化進度 UI（對照狀態機，不是單純轉圈）
+- [x] 大圖降級策略（CAP-03）— PR #13，前端 `sampleTopByPagerank` 取 PageRank 前 2,000 名
+- [x] 分析進行中的階段化進度 UI（對照狀態機，不是單純轉圈）— 已在 M3 `JobProgress.tsx` 完成
 
-**驗收**：2,000 節點的圖可以流暢拖曳，PERF-04 有實測數字。
+**驗收**：2,000 節點的圖可以流暢拖曳，PERF-04 有實測數字。CAP-03（> 2,000 節點自動降級）已用單元測試證明取樣邏輯正確；**PERF-04 本身（Chrome DevTools 量測拖曳 fps）尚未做**——需要真的瀏覽器操作，留給 demo 前手動量測一次，記錄在 `nfr.md`。
 
 ---
 

@@ -183,7 +183,25 @@ class AnalysisOut(BaseModel):
     period_end: datetime | None
     sentiment_summary: dict[str, Any]
     communities: list[CommunityOut]
-    #: Top participants by influence rank (not the full node list — that comes in M4).
+    #: Top participants by influence rank (not the full node list — see /graph, PR-10).
     top_influencers: list[NodeOut]
     #: Top participants by engagement score.
     top_engaged: list[NodeOut]
+
+
+# --- network graph (PR-10) --------------------------------------------
+
+
+class GraphEdgeOut(BaseModel):
+    source: str
+    target: str
+    weight: int
+
+
+class AnalysisGraphOut(BaseModel):
+    #: Every node, not just the top 20 (unlike AnalysisOut) — ordered by
+    #: pagerank descending so a frontend that samples top-N needs no resort.
+    nodes: list[NodeOut]
+    edges: list[GraphEdgeOut]
+    node_count: int
+    edge_count: int

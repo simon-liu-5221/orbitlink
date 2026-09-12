@@ -66,6 +66,11 @@ class Analysis(Base, TimestampMixin):
     sentiment_summary: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     #: Parameters this analysis actually ran with.
     params_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    #: The interaction graph's edges, ``[{"source", "target", "weight"}, ...]``.
+    #: Written once from the in-memory graph already built during the job (PR-10)
+    #: — a query-time rebuild from ``comments`` would just redo that work. Empty
+    #: for analyses persisted before this column existed.
+    graph_edges: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
 
     project: Mapped[Project] = relationship(back_populates="analyses")
     job: Mapped[AnalysisJob] = relationship(back_populates="analysis")
