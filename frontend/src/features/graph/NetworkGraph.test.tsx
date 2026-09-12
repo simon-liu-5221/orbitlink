@@ -88,3 +88,19 @@ test("unmounting destroys the Cytoscape instance", () => {
   unmount();
   expect(fakeCore.destroy).toHaveBeenCalled();
 });
+
+test("hands the live instance up via onCyReady, and null on unmount (PR-11 export image)", () => {
+  const onCyReady = vi.fn();
+  const { unmount } = render(
+    <NetworkGraph
+      nodes={[node("a")]}
+      edges={[]}
+      onSelectNode={() => {}}
+      onCyReady={onCyReady}
+    />,
+  );
+  expect(onCyReady).toHaveBeenCalledWith(fakeCore);
+
+  unmount();
+  expect(onCyReady).toHaveBeenLastCalledWith(null);
+});

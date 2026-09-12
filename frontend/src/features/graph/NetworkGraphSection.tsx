@@ -1,7 +1,10 @@
-import { useCallback, useMemo, useState } from "react";
+import type { Core } from "cytoscape";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { Spinner } from "@/components/ui";
+import { Button, Spinner } from "@/components/ui";
+import { nodesToCsv } from "@/features/export/csv";
+import { downloadBlob, downloadText } from "@/features/export/downloadFile";
 import { projectsApi } from "@/features/projects/api";
 
 import { GraphControls } from "./GraphControls";
@@ -24,6 +27,10 @@ export function NetworkGraphSection({ analysisId }: { analysisId: string }) {
 
   const [filters, setFilters] = useState<GraphFilters>(DEFAULT_FILTERS);
   const [selected, setSelected] = useState<string | null>(null);
+  const cyRef = useRef<Core | null>(null);
+  const onCyReady = useCallback((cy: Core | null) => {
+    cyRef.current = cy;
+  }, []);
 
   const sampled = useMemo(() => {
     if (!graph.data) return null;
@@ -62,6 +69,30 @@ export function NetworkGraphSection({ analysisId }: { analysisId: string }) {
     [],
   );
 
+  const analysisIdShort = analysisId.slice(0, 8);
+
+  function exportImage() {
+    const cy = cyRef.current;
+    if (!cy) return;
+    cy.png({
+      output: "blob-promise",
+      full: true,
+      scale: 2,
+      bg: "#ffffff",
+    }).then((blob) =>
+      downloadBlob(blob, `orbitlink-graph-${analysisIdShort}.png`),
+    );
+  }
+
+  function exportCsv() {
+    if (!filtered) return;
+    downloadText(
+      nodesToCsv(filtered.nodes),
+      `orbitlink-nodes-${analysisIdShort}.csv`,
+      "text/csv;charset=utf-8",
+    );
+  }
+
   if (graph.isLoading) {
     return (
       <div className="flex justify-center p-8 text-slate-400">
@@ -86,13 +117,33 @@ export function NetworkGraphSection({ analysisId }: { analysisId: string }) {
 
   return (
     <div className="space-y-3">
-      {sampled?.sampled && (
-        <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Showing the top {sampled.nodes.length.toLocaleString()} of{" "}
-          {sampled.totalNodeCount.toLocaleString()} participants by influence,
-          to keep the graph responsive.
-        </p>
-      )}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {sampled?.sampled ? (
+          <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Showing the top {sampled.nodes.length.toLocaleString()} of{" "}
+            {sampled.totalNodeCount.toLocaleString()} participants by influence,
+            to keep the graph responsive.
+          </p>
+        ) : (
+          <span />
+        )}
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={exportImage}
+            disabled={!filtered || filtered.nodes.length === 0}
+          >
+            Export image
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={exportCsv}
+            disabled={!filtered || filtered.nodes.length === 0}
+          >
+            Export data (CSV)
+          </Button>
+        </div>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-[1fr_16rem]">
         <div>
@@ -101,6 +152,7 @@ export function NetworkGraphSection({ analysisId }: { analysisId: string }) {
               nodes={filtered.nodes}
               edges={filtered.edges}
               onSelectNode={onSelectNode}
+              onCyReady={onCyReady}
             />
           ) : (
             <div className="flex h-[32rem] items-center justify-center rounded-lg border border-dashed border-slate-300 text-sm text-slate-500">

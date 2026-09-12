@@ -98,7 +98,7 @@
 
 ## M5 — 匯出、回饋與管理端（第 9 週）
 
-- [ ] PNG / PDF / CSV 匯出
+- [x] PNG / PDF / CSV 匯出 — PR #15（PR-11），全部前端生成（Cytoscape `cy.png()` / 純函式 CSV / html2canvas+jsPDF 動態載入），零後端改動
 - [ ] 使用者回饋與評分
 - [ ] 管理端：使用者清單、搜尋、停權、查看回饋
 
