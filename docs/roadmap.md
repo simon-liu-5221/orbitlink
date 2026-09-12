@@ -88,7 +88,7 @@
 - [x] Cytoscape.js 網路圖：力導向佈局、社群上色、節點大小依 PageRank — PR #13（PR-10），`GET /analyses/{id}/graph` + `graph_edges` 快照
 - [x] 節點點擊顯示側欄詳情 — PR #13
 - [x] 篩選：最小 degree、社群、情緒區間 — PR #13，純函式 `filterGraph`
-- [ ] Recharts：情緒分布、時間走勢、參與度散點圖
+- [x] Recharts：情緒分布、時間走勢、參與度散點圖 — PR #14（PR-13），情緒兩張圖零後端改動（`sentiment_summary` 早就有），散點圖重用 PR-10 的 `/graph`
 - [x] 大圖降級策略（CAP-03）— PR #13，前端 `sampleTopByPagerank` 取 PageRank 前 2,000 名
 - [x] 分析進行中的階段化進度 UI（對照狀態機，不是單純轉圈）— 已在 M3 `JobProgress.tsx` 完成
 
