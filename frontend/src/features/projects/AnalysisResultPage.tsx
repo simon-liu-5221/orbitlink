@@ -8,18 +8,24 @@ import { FormError, Spinner } from "@/components/ui";
 
 import { projectsApi } from "./api";
 
-// Cytoscape is a heavy dependency (PERF-05: LCP < 2.5s) — keep it out of the
-// initial bundle and only fetch it when someone actually opens a result page.
+// Cytoscape and Recharts are both heavy (PERF-05: LCP < 2.5s) — keep them out
+// of the initial bundle and only fetch either when someone actually opens a
+// result page.
 const NetworkGraphSection = lazy(() =>
   import("@/features/graph/NetworkGraphSection").then((m) => ({
     default: m.NetworkGraphSection,
   })),
 );
+const AnalysisChartsSection = lazy(() =>
+  import("@/features/charts/AnalysisChartsSection").then((m) => ({
+    default: m.AnalysisChartsSection,
+  })),
+);
 
 /**
  * The analysis result page: summary stats, the interactive network graph
- * (PR-10), and the top-participant lists. Charts (sentiment distribution /
- * trend / engagement scatter) are a separate, smaller M4 PR.
+ * (PR-10), the sentiment/engagement charts (PR-13), and the top-participant
+ * lists.
  */
 export function AnalysisResultPage() {
   const { analysisId = "" } = useParams();
@@ -106,6 +112,25 @@ export function AnalysisResultPage() {
             }
           >
             <NetworkGraphSection analysisId={a.id} />
+          </Suspense>
+        </section>
+
+        <section>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Charts
+          </h2>
+          <Suspense
+            fallback={
+              <div className="flex justify-center p-8 text-slate-400">
+                <Spinner />
+              </div>
+            }
+          >
+            <AnalysisChartsSection
+              analysisId={a.id}
+              sentimentSummary={a.sentiment_summary}
+              insufficientData={a.insufficient_data}
+            />
           </Suspense>
         </section>
 

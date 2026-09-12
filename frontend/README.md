@@ -44,6 +44,9 @@ src/
                 AnalysisResultPage, jobStatus.ts (ADR-0002 stage labels)
     graph/      NetworkGraph (Cytoscape), NodeDetailPanel, GraphControls,
                 graphData.ts — pure sampling/filtering/color/size (PR-10)
+    charts/     SentimentDistributionChart, SentimentTrendChart,
+                EngagementScatterChart (Recharts), sentimentSummary.ts /
+                engagementScatter.ts — pure parsing/chart-data prep (PR-13)
     health/     the M0 status widget, now at /status
   test/         utils.tsx — renderWithProviders, jsonResponse
 ```
@@ -65,6 +68,19 @@ unit-tested without a canvas:
 `cytoscape` entirely (jsdom has no canvas) and checks the wiring — the right
 elements go in, a tap reaches the callback — while the actual rendering only
 gets exercised by hand in a real browser.
+
+## The result-page charts (PR-13)
+
+`AnalysisChartsSection` also lazy-loads (Recharts is the other heavy dependency).
+Unlike the graph, Recharts *can* render in jsdom — `src/test/setup.ts` polyfills
+`ResizeObserver` and stubs `getBoundingClientRect` to a fixed non-zero size, since
+`ResponsiveContainer` refuses to draw anything at a measured 0x0. That lets the
+chart tests assert on real rendered text instead of mocking the library.
+
+Sentiment distribution and the sentiment-over-time trend need no new backend
+call at all — both already live in `AnalysisOut.sentiment_summary` (AN-03). The
+engagement scatter reuses PR-10's `GET /analyses/{id}/graph` query (same
+TanStack Query cache key as the network graph, so opening both costs one fetch).
 
 ## Routes
 
