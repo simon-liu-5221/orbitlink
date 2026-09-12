@@ -1,10 +1,11 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 
 import { ApiError } from "@/api/client";
 import { AppShell } from "@/components/AppShell";
-import { FormError, Spinner } from "@/components/ui";
+import { Button, FormError, Spinner } from "@/components/ui";
+import { buildPdfReport } from "@/features/export/pdfReport";
 
 import { projectsApi } from "./api";
 
@@ -35,6 +36,31 @@ export function AnalysisResultPage() {
     retry: (count, err) =>
       !(err instanceof ApiError && err.status === 404) && count < 2,
   });
+
+  const statsRef = useRef<HTMLDListElement>(null);
+  const graphRef = useRef<HTMLElement>(null);
+  const chartsRef = useRef<HTMLElement>(null);
+  const influencersRef = useRef<HTMLElement>(null);
+  const engagedRef = useRef<HTMLElement>(null);
+  const [exportingPdf, setExportingPdf] = useState(false);
+
+  async function exportPdf() {
+    setExportingPdf(true);
+    try {
+      await buildPdfReport(
+        [
+          { label: "Stats", element: statsRef.current },
+          { label: "Network graph", element: graphRef.current },
+          { label: "Charts", element: chartsRef.current },
+          { label: "Top influencers", element: influencersRef.current },
+          { label: "Most engaged", element: engagedRef.current },
+        ],
+        `orbitlink-report-${analysisId.slice(0, 8)}.pdf`,
+      );
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   if (analysis.isLoading) {
     return (
@@ -75,9 +101,18 @@ export function AnalysisResultPage() {
           ← Back to project
         </Link>
 
-        <h1 className="text-xl font-semibold text-slate-900">
-          Analysis result
-        </h1>
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-xl font-semibold text-slate-900">
+            Analysis result
+          </h1>
+          <Button
+            variant="secondary"
+            onClick={exportPdf}
+            loading={exportingPdf}
+          >
+            Export report (PDF)
+          </Button>
+        </div>
 
         {(a.insufficient_data || a.weak_structure || a.approximated) && (
           <div className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -91,7 +126,10 @@ export function AnalysisResultPage() {
           </div>
         )}
 
-        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <dl
+          ref={statsRef}
+          className="grid grid-cols-2 gap-3 bg-white sm:grid-cols-5"
+        >
           {stats.map(([label, value]) => (
             <div key={label} className="rounded-lg border border-slate-200 p-3">
               <dt className="text-xs text-slate-500">{label}</dt>
@@ -100,7 +138,7 @@ export function AnalysisResultPage() {
           ))}
         </dl>
 
-        <section>
+        <section ref={graphRef} className="bg-white">
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
             Network graph
           </h2>
@@ -115,7 +153,7 @@ export function AnalysisResultPage() {
           </Suspense>
         </section>
 
-        <section>
+        <section ref={chartsRef} className="bg-white">
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
             Charts
           </h2>
@@ -134,7 +172,7 @@ export function AnalysisResultPage() {
           </Suspense>
         </section>
 
-        <section>
+        <section ref={influencersRef} className="bg-white">
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
             Top influencers
           </h2>
@@ -152,7 +190,7 @@ export function AnalysisResultPage() {
           </ol>
         </section>
 
-        <section>
+        <section ref={engagedRef} className="bg-white">
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
             Most engaged
           </h2>
