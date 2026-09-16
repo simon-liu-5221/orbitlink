@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { signOut } from "@/features/auth/session";
 import { useAuthStore } from "@/features/auth/store";
+import { FeedbackModal } from "@/features/feedback/FeedbackModal";
 
 import { Button } from "./ui";
 
@@ -11,6 +12,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   async function onSignOut() {
     setSigningOut(true);
@@ -27,6 +29,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
           <div className="flex items-center gap-3 text-sm text-slate-500">
             {user && <span className="hidden sm:inline">{user.username}</span>}
+            <Button variant="ghost" onClick={() => setFeedbackOpen(true)}>
+              Feedback
+            </Button>
             <Button variant="ghost" onClick={onSignOut} loading={signingOut}>
               Sign out
             </Button>
@@ -34,6 +39,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       {children}
+      {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
     </div>
   );
 }

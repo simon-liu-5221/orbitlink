@@ -30,6 +30,7 @@ GET    /api/v1/jobs/{job_id}                  poll status + progress
 POST   /api/v1/jobs/{job_id}/cancel           cancel a running job
 GET    /api/v1/analyses/{analysis_id}         summary + communities + top participants
 GET    /api/v1/analyses/{analysis_id}/graph   every node + edge (for the network graph, PR-10)
+POST   /api/v1/feedback                       submit product feedback (rating 1-5 + optional comment, PR-12)
 ```
 
 Every project-scoped route answers 403 identically whether the project belongs
