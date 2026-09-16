@@ -10,6 +10,7 @@ columns on ``users`` come in M3 (spec GU-01).
 from app.db.base import Base
 from app.db.models.analysis import Analysis, Comment, Community, Node, RawComment
 from app.db.models.auth_token import AuthToken, TokenPurpose
+from app.db.models.feedback import Feedback
 from app.db.models.job import AnalysisJob
 from app.db.models.project import Project
 from app.db.models.user import User
@@ -21,6 +22,7 @@ __all__ = [
     "Base",
     "Comment",
     "Community",
+    "Feedback",
     "Node",
     "Project",
     "RawComment",

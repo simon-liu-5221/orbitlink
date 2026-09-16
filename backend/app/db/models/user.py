@@ -17,6 +17,7 @@ from app.db.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.db.models.auth_token import AuthToken
+    from app.db.models.feedback import Feedback
     from app.db.models.project import Project
 
 TRIAL_DAYS = 30
@@ -38,5 +39,8 @@ class User(Base, TimestampMixin):
         back_populates="user", cascade="all, delete-orphan"
     )
     auth_tokens: Mapped[list[AuthToken]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    feedback: Mapped[list[Feedback]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )

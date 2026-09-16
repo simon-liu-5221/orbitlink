@@ -49,6 +49,8 @@ src/
                 engagementScatter.ts — pure parsing/chart-data prep (PR-13)
     export/     csv.ts (pure), downloadFile.ts, pdfReport.ts — PNG/CSV/PDF
                 export, all client-side (PR-11)
+    feedback/   StarRating, FeedbackModal, api.ts — product feedback,
+                reachable from AppShell on every page (PR-12)
     health/     the M0 status widget, now at /status
   test/         utils.tsx — renderWithProviders, jsonResponse
 ```

@@ -119,3 +119,6 @@ rate_limit_login = rate_limiter("login", limit=10, window_seconds=60)
 #: Password-reset requests, so the endpoint cannot be used to spray a mailbox
 #: or to probe which addresses have accounts (PR-03 AC-11).
 rate_limit_forgot_password = rate_limiter("forgot_password", limit=5, window_seconds=3600)
+#: Feedback submissions — generous, since it's meant to slow abuse, not
+#: ordinary use (PR-12 AC-8).
+rate_limit_feedback = rate_limiter("feedback", limit=10, window_seconds=3600)

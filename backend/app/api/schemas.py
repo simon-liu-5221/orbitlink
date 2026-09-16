@@ -205,3 +205,18 @@ class AnalysisGraphOut(BaseModel):
     edges: list[GraphEdgeOut]
     node_count: int
     edge_count: int
+
+
+# --- feedback (PR-12) --------------------------------------------------
+
+
+class FeedbackCreate(BaseModel):
+    rating: int = Field(ge=1, le=5)
+    comment: str | None = Field(default=None, max_length=2000)
+
+
+class FeedbackOut(ORMModel):
+    id: uuid.UUID
+    rating: int
+    comment: str | None
+    created_at: datetime
