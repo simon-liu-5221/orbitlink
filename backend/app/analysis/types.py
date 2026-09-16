@@ -149,6 +149,26 @@ class SentimentResult:
 
 
 @dataclass(frozen=True)
+class MetricForecast:
+    """Outcome of :func:`app.analysis.forecast.forecast_metric` (AN-06 phase 2).
+
+    A simple linear-regression extrapolation, not a machine-learning model —
+    ``mae`` is a real leave-one-out error, not a placeholder, so the UI can be
+    honest about how rough the prediction is.
+    """
+
+    #: False when there weren't enough usable points (below ``MIN_HISTORY_POINTS``).
+    available: bool
+    #: The value predicted for the next analysis; ``None`` when unavailable.
+    predicted_next: float | None
+    #: Leave-one-out mean absolute error over the historical points; ``None``
+    #: when unavailable.
+    mae: float | None
+    #: How many usable points fed this forecast.
+    points_used: int
+
+
+@dataclass(frozen=True)
 class CommunityDetectionResult:
     """Outcome of :func:`app.analysis.communities.detect_communities`."""
 

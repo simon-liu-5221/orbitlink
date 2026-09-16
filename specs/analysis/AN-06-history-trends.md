@@ -1,6 +1,6 @@
 # AN-06：歷史趨勢比較
 
-**Status**: Phase 1 done；Phase 2（外插預測）延到下一個 PR
+**Status**: done（phase 1 + phase 2）
 **Actor**: Promoter
 **相關 spec**: PR-13（圖表元件與測試模式沿用）、AN-03（`sentiment_summary` 是情緒指標的來源）
 
@@ -11,7 +11,7 @@
 這個 spec 分兩個階段：
 
 - **Phase 1（PR #18）**：比較視圖 + 趨勢圖。不需要新的資料庫欄位——`analyses` 表每一列本來就是專案在某個時間點的完整快照，「歷史」只是把同一個 `project_id` 的多筆 `analyses` 依時間排序
-- **Phase 2（下一個 PR）**：外插預測 + 留出法 MAE，只在有 ≥5 次歷史分析時啟用
+- **Phase 2（這個 PR）**：外插預測 + 留出法 MAE，只在有 ≥5 次歷史分析時啟用
 
 ## Trigger
 
@@ -62,12 +62,12 @@
 - [x] **AC-7** Given 某筆分析 `insufficient_data=true`，When 建立社群數趨勢資料，Then 該筆被排除；When 建立參與人數與情緒趨勢資料，Then 該筆仍包含在內（純函式） — `frontend/src/features/history/historyData.test.ts` (`buildCommunityTrend`, `buildParticipantsTrend`, `buildSentimentTrend`)
 - [x] **AC-8** Given 多筆分析，When 建立比較表格資料，Then 每一列包含時間、參與人數、社群數、情緒指標、是否資料不足（純函式） — `frontend/src/features/history/historyData.test.ts` (`buildComparisonRows`), `frontend/src/features/history/HistoryComparisonTable.test.tsx`
 
-### Phase 2（下一個 PR，先列出不做）
+### Phase 2（這個 PR）
 
-- [ ] **AC-9** Given ≥5 筆歷史分析，When 計算外插預測，Then 對每個指標用線性迴歸並回傳下一個時間點的預測值
-- [ ] **AC-10** Given 同樣的歷史資料，When 計算 MAE，Then 用留出法（每次留一筆當測試集，其餘訓練，取誤差平均）算出，不是憑空給一個數字
-- [ ] **AC-11** Given <5 筆歷史分析，When 檢視預測區塊，Then 顯示「還需要 N 次分析」而不是顯示假預測
-- [ ] **AC-12** Given 顯示預測結果，When 使用者看到 UI，Then 有文字明確說明這是外插趨勢線，不是機器學習模型
+- [x] **AC-9** Given ≥5 筆歷史分析，When 計算外插預測，Then 對每個指標用線性迴歸並回傳下一個時間點的預測值 — `backend/tests/unit/analysis/test_forecast.py::test_ac9_perfect_line_extrapolates_exactly`, `backend/tests/integration/test_project_forecast_api.py::test_ac9_and_ac10_forecast_and_loo_mae_at_minimum_history`
+- [x] **AC-10** Given 同樣的歷史資料，When 計算 MAE，Then 用留出法（每次留一筆當測試集，其餘訓練，取誤差平均）算出，不是憑空給一個數字 — `backend/tests/unit/analysis/test_forecast.py::test_ac10_mae_is_real_leave_one_out_not_a_placeholder`
+- [x] **AC-11** Given <5 筆歷史分析，When 檢視預測區塊，Then 顯示「還需要 N 次分析」而不是顯示假預測 — `backend/tests/unit/analysis/test_forecast.py::test_ac11_below_minimum_is_unavailable_not_a_fake_prediction`, `backend/tests/integration/test_project_forecast_api.py::test_ac11_below_minimum_history_is_unavailable_per_metric`, `frontend/src/features/history/forecastData.test.ts`, `frontend/src/features/history/ForecastSection.test.tsx`
+- [x] **AC-12** Given 顯示預測結果，When 使用者看到 UI，Then 有文字明確說明這是外插趨勢線，不是機器學習模型 — `frontend/src/features/history/ForecastSection.test.tsx::AC-12`
 
 ## Out of scope
 
@@ -81,3 +81,11 @@
 - **為什麼歷史端點是「舊到新」，`jobs` 端點是「新到舊」**：`GET /projects/{id}/jobs` 是給使用者看「最近在幹嘛」，最新的擺最前面才合理；這個端點的唯一用途是畫時間序列圖表，圖表函式庫（Recharts）期待資料本來就照 X 軸順序排好，讓後端排序而不是每次前端都要 `.reverse()`
 - **情緒指標是近似值，不是真的算術平均**：`sentiment_summary.distribution` 存的是各類別的百分比（AN-03），`(positive% - negative%) / 100` 跟 AN-03 定義的單則留言分數（`p_positive - p_negative`）用同一套邏輯，但這是「用分布反推」的近似整體分數，不是重新對每則留言的原始分數取平均。這個近似的取捨是為了不必新增查詢——`sentiment_summary` 已經在 `analyses` 表上，不用碰 `comments` 或 `nodes` 表
 - 這個端點掛在既有的 `app/api/routers/projects.py`（跟 `list_project_jobs` 放一起），不開新的 router 檔案
+
+### Phase 2 補充
+
+- **端點是 `GET /projects/{id}/analyses/forecast`，不是塞進歷史列表裡**：預測是「整段歷史」算出的單一值，不是某一筆分析的欄位，跟 `AnalysisHistoryOut` 的一筆一列語意不同，所以獨立端點
+- **每個指標各自判斷是否有足夠歷史，不是用同一個「歷史分析總數」擋三個指標**：跟 phase 1 的過濾邏輯一致——`insufficient_data` 的那筆本來就不算進社群數的序列，所以社群數序列可能比參與人數/情緒序列短；用同一個「有沒有 5 筆」擋所有指標會不誠實地隱藏「其實社群數只有 3 筆可用」這件事
+- **迴歸的 x 軸是分析的序數（0, 1, 2, ...），不是實際經過的天數**：分析可能間隔不規則，用序數迴歸只是外插「下一次分析」的值，不假裝知道下一次分析會在哪一天發生——避免暗示比實際更精確的時間預測
+- **留出法（LOOCV）的細節**：對每一筆歷史資料，用其餘所有點（保留原本的序數 x，不重新編號）重新配一條線，預測被留下的那一點，算絕對誤差；n 筆歷史資料的 MAE 是這 n 個誤差的平均。純線性代數（`numpy.polyfit`），不是 sklearn 的交叉驗證工具，因為資料量小、公式簡單，沒有引入額外依賴的理由
+- 核心數學（`forecast_metric`）放在 `app/analysis/forecast.py`——純函式、無 db/api 依賴，符合 ADR-0003 分析層的規則，也讓它跟其他分析函式一樣被 90% 覆蓋率的 pytest 規則約束

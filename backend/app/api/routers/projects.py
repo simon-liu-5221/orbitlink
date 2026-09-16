@@ -18,10 +18,13 @@ from typing import Annotated, Any
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 
+from app.analysis.forecast import MIN_HISTORY_POINTS, forecast_metric
 from app.api.deps import CurrentUser, DbSession
 from app.api.schemas import (
+    AnalysisForecastOut,
     AnalysisHistoryOut,
     JobStatusOut,
+    MetricForecastOut,
     ProjectCreate,
     ProjectOut,
     ProjectRename,
@@ -152,14 +155,10 @@ def _sentiment_index(summary: dict[str, Any]) -> float | None:
     return (positive - negative) / 100
 
 
-@router.get("/{project_id}/analyses", response_model=list[AnalysisHistoryOut])
-def list_project_analysis_history(
-    project_id: uuid.UUID, db: DbSession, user: CurrentUser
-) -> list[AnalysisHistoryOut]:
+def _history_entries(db: DbSession, project: Project) -> list[AnalysisHistoryOut]:
     """Every completed analysis for this project, oldest first — the order a
     trend chart wants, unlike ``/jobs`` (newest first, a recent-activity view).
     """
-    project = _owned_project(db, project_id, user)
     analyses = db.scalars(
         select(Analysis)
         .where(Analysis.project_id == project.id)
@@ -176,3 +175,45 @@ def list_project_analysis_history(
         )
         for a in analyses
     ]
+
+
+@router.get("/{project_id}/analyses", response_model=list[AnalysisHistoryOut])
+def list_project_analysis_history(
+    project_id: uuid.UUID, db: DbSession, user: CurrentUser
+) -> list[AnalysisHistoryOut]:
+    project = _owned_project(db, project_id, user)
+    return _history_entries(db, project)
+
+
+@router.get("/{project_id}/analyses/forecast", response_model=AnalysisForecastOut)
+def get_project_analysis_forecast(
+    project_id: uuid.UUID, db: DbSession, user: CurrentUser
+) -> AnalysisForecastOut:
+    """Linear-regression extrapolation for the three headline metrics (AN-06
+    phase 2). Each metric is gated on its own usable point count: a community
+    count from an ``insufficient_data`` analysis isn't a real number, so those
+    rows are dropped from that series the same way the phase-1 trend charts
+    drop them — but they still count toward the participants/sentiment series.
+    """
+    project = _owned_project(db, project_id, user)
+    entries = _history_entries(db, project)
+
+    participants = [float(e.node_count) for e in entries]
+    communities = [float(e.community_count) for e in entries if not e.insufficient_data]
+    sentiment = [e.sentiment_index for e in entries if e.sentiment_index is not None]
+
+    def _out(values: list[float]) -> MetricForecastOut:
+        f = forecast_metric(values)
+        return MetricForecastOut(
+            available=f.available,
+            predicted_next=f.predicted_next,
+            mae=f.mae,
+            points_used=f.points_used,
+        )
+
+    return AnalysisForecastOut(
+        required_history=MIN_HISTORY_POINTS,
+        sentiment=_out(sentiment),
+        participants=_out(participants),
+        communities=_out(communities),
+    )

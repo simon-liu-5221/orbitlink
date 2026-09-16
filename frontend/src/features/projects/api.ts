@@ -7,6 +7,7 @@ export type Job = Schemas["JobStatusOut"];
 export type Analysis = Schemas["AnalysisOut"];
 export type AnalysisGraph = Schemas["AnalysisGraphOut"];
 export type AnalysisHistoryEntry = Schemas["AnalysisHistoryOut"];
+export type AnalysisForecast = Schemas["AnalysisForecastOut"];
 
 export interface ListProjectsParams {
   q?: string;
@@ -46,6 +47,9 @@ export const projectsApi = {
 
   analysisHistory: (id: string) =>
     apiRequest<AnalysisHistoryEntry[]>(`/api/v1/projects/${id}/analyses`),
+
+  analysisForecast: (id: string) =>
+    apiRequest<AnalysisForecast>(`/api/v1/projects/${id}/analyses/forecast`),
 
   startAnalysis: (projectId: string, body: Schemas["AnalysisCreate"]) =>
     apiRequest<Schemas["JobAccepted"]>(
