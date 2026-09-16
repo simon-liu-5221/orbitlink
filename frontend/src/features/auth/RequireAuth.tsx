@@ -30,3 +30,10 @@ export function RedirectIfAuthed({ children }: { children: ReactNode }) {
   if (status === "authenticated") return <Navigate to="/" replace />;
   return <>{children}</>;
 }
+
+/** Nest inside RequireAuth — a non-admin never even learns the route exists. */
+export function RequireAdmin({ children }: { children: ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+  if (user?.role !== "admin") return <Navigate to="/" replace />;
+  return <>{children}</>;
+}

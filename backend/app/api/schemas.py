@@ -55,6 +55,10 @@ class UserOut(ORMModel):
     email_verified: bool
     subscription_plan: str
     trial_ends_at: datetime | None
+    #: "admin" unlocks the admin UI client-side (AD-01/AD-02); the API itself
+    #: is the real gate (require_admin), this is just so the frontend knows
+    #: whether to show the link.
+    role: str
     created_at: datetime
 
 
@@ -220,3 +224,28 @@ class FeedbackOut(ORMModel):
     rating: int
     comment: str | None
     created_at: datetime
+
+
+# --- admin (AD-01 / AD-02) ---------------------------------------------
+
+
+class AdminUserOut(ORMModel):
+    id: uuid.UUID
+    email: str
+    username: str
+    role: str
+    email_verified: bool
+    subscription_plan: str
+    suspended_at: datetime | None
+    created_at: datetime
+
+
+class AdminFeedbackOut(ORMModel):
+    id: uuid.UUID
+    rating: int
+    comment: str | None
+    created_at: datetime
+    #: Denormalized onto the row so the admin inbox needs no join round trip
+    #: in the frontend — who left this is the whole point of reading it.
+    user_email: str
+    username: str

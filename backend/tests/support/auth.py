@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings, get_settings
 from app.core.security import create_access_token, hash_password
 from app.db.models import User
-from app.db.models.user import TRIAL_DAYS
+from app.db.models.user import ADMIN_ROLE, DEFAULT_ROLE, TRIAL_DAYS
 
 #: Meets the GU-01 policy (12+ chars, a digit, a letter).
 PASSWORD = "correct-horse-7"
@@ -31,6 +31,8 @@ def make_user(
     username: str | None = None,
     password_hash: str = PASSWORD_HASH,
     email_verified: bool = True,
+    role: str = DEFAULT_ROLE,
+    suspended_at: datetime | None = None,
 ) -> User:
     """Insert a usable account. Defaults to verified, since most tests want one."""
     suffix = uuid.uuid4().hex[:12]
@@ -41,10 +43,21 @@ def make_user(
         email_verified=email_verified,
         subscription_plan="trial",
         trial_ends_at=datetime.now(UTC) + timedelta(days=TRIAL_DAYS),
+        role=role,
+        suspended_at=suspended_at,
     )
     db.add(user)
     db.flush()
     return user
+
+
+def make_admin(
+    db: Session,
+    *,
+    email: str | None = None,
+    username: str | None = None,
+) -> User:
+    return make_user(db, email=email, username=username, role=ADMIN_ROLE)
 
 
 def bearer(user: User, settings: Settings | None = None) -> dict[str, str]:

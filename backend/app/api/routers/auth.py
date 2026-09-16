@@ -214,6 +214,12 @@ def login(body: LoginRequest, db: DbSession, settings: AppSettings) -> JSONRespo
             status.HTTP_403_FORBIDDEN,
             detail={"error_code": "EMAIL_NOT_VERIFIED", "message": str(exc)},
         ) from exc
+    except auth_service.AccountSuspendedError as exc:
+        db.rollback()
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            detail={"error_code": "ACCOUNT_SUSPENDED", "message": str(exc)},
+        ) from exc
     except auth_service.InvalidCredentialsError as exc:
         db.rollback()
         raise _INVALID_CREDENTIALS from exc

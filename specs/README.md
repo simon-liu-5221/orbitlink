@@ -64,6 +64,6 @@ commit: feat(AN-01): add multi-resolution louvain detection
 ### Admin
 | ID | 功能 | Status |
 |---|---|---|
-| AD-01 | 使用者管理（檢視 / 搜尋 / 停權） | draft |
-| AD-02 | 檢視回饋與評價 | draft |
-| AD-03 | 編輯網站內容 | draft |
+| AD-01 | 使用者管理（檢視 / 搜尋 / 停權） | done |
+| AD-02 | 檢視回饋與評價 | done |
+| AD-03 | 編輯網站內容 | draft（延後：需要先有 GU-02 公開首頁才有內容可編輯） |
