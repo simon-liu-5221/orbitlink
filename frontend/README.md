@@ -51,6 +51,8 @@ src/
                 export, all client-side (PR-11)
     feedback/   StarRating, FeedbackModal, api.ts — product feedback,
                 reachable from AppShell on every page (PR-12)
+    admin/      AdminUsersPage, AdminFeedbackPage, AdminNav, api.ts —
+                gated by RequireAdmin (AD-01/AD-02)
     health/     the M0 status widget, now at /status
   test/         utils.tsx — renderWithProviders, jsonResponse
 ```
@@ -104,6 +106,14 @@ Everything is client-side — no export endpoint exists on the backend.
   critical CVE (unrelated to the `.html()` feature this app never calls, but
   `npm audit`/SEC-03 flags it regardless).
 
+## Admin (AD-01 / AD-02)
+
+`RequireAdmin` (in `RequireAuth.tsx`) nests inside `RequireAuth` and checks
+`user.role === "admin"` — a non-admin is redirected home and never learns the
+route exists. The "Admin" link in `AppShell` is hidden the same way. There's
+no self-service path to become an admin anywhere in the UI — see the backend
+README's `scripts/promote_admin.py`.
+
 ## Routes
 
 | path | guard | purpose |
@@ -114,3 +124,5 @@ Everything is client-side — no export endpoint exists on the backend.
 | `/` | require auth | project list + search + create |
 | `/projects/:projectId` | require auth | rename, delete, start analysis, job progress |
 | `/analyses/:analysisId` | require auth | result summary + interactive network graph (PR-10) |
+| `/admin/users` | require admin | search, suspend / restore accounts (AD-01) |
+| `/admin/feedback` | require admin | every feedback submission (AD-02) |

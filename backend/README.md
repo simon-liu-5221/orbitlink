@@ -31,6 +31,10 @@ POST   /api/v1/jobs/{job_id}/cancel           cancel a running job
 GET    /api/v1/analyses/{analysis_id}         summary + communities + top participants
 GET    /api/v1/analyses/{analysis_id}/graph   every node + edge (for the network graph, PR-10)
 POST   /api/v1/feedback                       submit product feedback (rating 1-5 + optional comment, PR-12)
+GET    /api/v1/admin/users?q=&include_suspended= admin: list/search users (AD-01)
+POST   /api/v1/admin/users/{id}/suspend       admin: suspend an account (AD-01)
+POST   /api/v1/admin/users/{id}/unsuspend     admin: restore a suspended account (AD-01)
+GET    /api/v1/admin/feedback                 admin: every feedback submission (AD-02)
 ```
 
 Every project-scoped route answers 403 identically whether the project belongs
@@ -57,6 +61,14 @@ Outbound email has a pluggable backend. The default (`EMAIL_BACKEND=log`) writes
 the message to the application log, so nothing external is needed to develop or
 run CI; `EMAIL_BACKEND=smtp` points at MailHog in compose (inbox at
 http://localhost:8025) or a real provider in production.
+
+Admin (M5, specs AD-01/AD-02): a `role` column on `users`, checked by a
+`require_admin` dependency layered on the same JWT auth — no separate admin
+login. Nothing in the app can self-promote; the only way to become an admin is
+
+```bash
+uv run python scripts/promote_admin.py someone@example.com
+```
 
 Sentiment uses a lexicon stand-in by default; `USE_REAL_SENTIMENT_MODEL=true`
 plus `uv pip install transformers torch` switches to XLM-RoBERTa (decision B1).

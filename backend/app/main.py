@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
-from app.api.routers import analyses, auth, feedback, health, projects
+from app.api.routers import admin, analyses, auth, feedback, health, projects
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 
@@ -36,6 +36,7 @@ def create_app() -> FastAPI:
     app.include_router(projects.router)
     app.include_router(analyses.router)
     app.include_router(feedback.router)
+    app.include_router(admin.router)
 
     return app
 

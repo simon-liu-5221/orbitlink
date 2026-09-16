@@ -56,6 +56,10 @@ class EmailNotVerifiedError(AuthError):
     pass
 
 
+class AccountSuspendedError(AuthError):
+    pass
+
+
 class InvalidTokenError(AuthError):
     pass
 
@@ -230,6 +234,8 @@ def login(
         raise InvalidCredentialsError("email or password is wrong")
     if not security.verify_password(password, user.password_hash):
         raise InvalidCredentialsError("email or password is wrong")
+    if user.is_suspended:
+        raise AccountSuspendedError("this account has been suspended")
     if not user.email_verified:
         raise EmailNotVerifiedError("confirm your email address before signing in")
 

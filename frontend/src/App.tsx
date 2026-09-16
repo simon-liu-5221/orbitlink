@@ -1,9 +1,15 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
+import { AdminFeedbackPage } from "@/features/admin/AdminFeedbackPage";
+import { AdminUsersPage } from "@/features/admin/AdminUsersPage";
 import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { RegisterPage } from "@/features/auth/RegisterPage";
-import { RedirectIfAuthed, RequireAuth } from "@/features/auth/RequireAuth";
+import {
+  RedirectIfAuthed,
+  RequireAdmin,
+  RequireAuth,
+} from "@/features/auth/RequireAuth";
 import { ResetPasswordPage } from "@/features/auth/ResetPasswordPage";
 import { useSessionBootstrap } from "@/features/auth/session";
 import { VerifyEmailPage } from "@/features/auth/VerifyEmailPage";
@@ -69,6 +75,27 @@ export default function App() {
         element={
           <RequireAuth>
             <AnalysisResultPage />
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/admin/users"
+        element={
+          <RequireAuth>
+            <RequireAdmin>
+              <AdminUsersPage />
+            </RequireAdmin>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/admin/feedback"
+        element={
+          <RequireAuth>
+            <RequireAdmin>
+              <AdminFeedbackPage />
+            </RequireAdmin>
           </RequireAuth>
         }
       />

@@ -26,6 +26,11 @@ _UNAUTHORISED = HTTPException(
     "not authenticated",
     headers={"WWW-Authenticate": "Bearer"},
 )
+_SUSPENDED = HTTPException(
+    status.HTTP_403_FORBIDDEN,
+    detail={"error_code": "ACCOUNT_SUSPENDED", "message": "this account has been suspended"},
+)
+_ADMIN_ONLY = HTTPException(status.HTTP_403_FORBIDDEN, "admin access required")
 
 _bearer = HTTPBearer(auto_error=False)
 
@@ -65,10 +70,23 @@ def current_user(
     user = db.get(User, user_id)
     if user is None:
         raise _UNAUTHORISED
+    if user.is_suspended:
+        # Kills an already-issued access token on its very next request —
+        # suspension doesn't wait for the token to expire (AD-01).
+        raise _SUSPENDED
     return user
 
 
 CurrentUser = Annotated[User, Depends(current_user)]
+
+
+def require_admin(user: CurrentUser) -> User:
+    if not user.is_admin:
+        raise _ADMIN_ONLY
+    return user
+
+
+CurrentAdmin = Annotated[User, Depends(require_admin)]
 
 
 # --- refresh cookie ---------------------------------------------------

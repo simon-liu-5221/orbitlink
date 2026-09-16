@@ -19,6 +19,7 @@ from sqlalchemy import select
 
 from app.api.deps import CurrentUser, DbSession
 from app.api.schemas import JobStatusOut, ProjectCreate, ProjectOut, ProjectRename
+from app.api.search import escape_like
 from app.db.models import AnalysisJob, Project, User
 from app.jobs.state_machine import TERMINAL
 
@@ -32,11 +33,6 @@ def _owned_project(db: DbSession, project_id: uuid.UUID, user: User) -> Project:
     if project is None or project.user_id != user.id:
         raise _NOT_FOUND
     return project
-
-
-def _escape_like(term: str) -> str:
-    """Neutralise the caller's ``%`` / ``_`` so a search stays a literal search."""
-    return term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=ProjectOut)
@@ -59,7 +55,7 @@ def list_projects(
     if not include_archived:
         stmt = stmt.where(Project.archived_at.is_(None))
     if q and q.strip():
-        stmt = stmt.where(Project.name.ilike(f"%{_escape_like(q.strip())}%", escape="\\"))
+        stmt = stmt.where(Project.name.ilike(f"%{escape_like(q.strip())}%", escape="\\"))
     return list(db.scalars(stmt.order_by(Project.created_at.desc())).all())
 
 

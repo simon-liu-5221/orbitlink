@@ -29,6 +29,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
           <div className="flex items-center gap-3 text-sm text-slate-500">
             {user && <span className="hidden sm:inline">{user.username}</span>}
+            {user?.role === "admin" && (
+              <Link
+                to="/admin/users"
+                className="text-slate-500 hover:text-slate-800"
+              >
+                Admin
+              </Link>
+            )}
             <Button variant="ghost" onClick={() => setFeedbackOpen(true)}>
               Feedback
             </Button>
