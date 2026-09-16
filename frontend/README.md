@@ -47,6 +47,8 @@ src/
     charts/     SentimentDistributionChart, SentimentTrendChart,
                 EngagementScatterChart (Recharts), sentimentSummary.ts /
                 engagementScatter.ts — pure parsing/chart-data prep (PR-13)
+    export/     csv.ts (pure), downloadFile.ts, pdfReport.ts — PNG/CSV/PDF
+                export, all client-side (PR-11)
     health/     the M0 status widget, now at /status
   test/         utils.tsx — renderWithProviders, jsonResponse
 ```
@@ -81,6 +83,24 @@ Sentiment distribution and the sentiment-over-time trend need no new backend
 call at all — both already live in `AnalysisOut.sentiment_summary` (AN-03). The
 engagement scatter reuses PR-10's `GET /analyses/{id}/graph` query (same
 TanStack Query cache key as the network graph, so opening both costs one fetch).
+
+## Export (PR-11)
+
+Everything is client-side — no export endpoint exists on the backend.
+
+- **PNG**: `NetworkGraph` hands its live Cytoscape instance up via `onCyReady`;
+  `NetworkGraphSection` calls `cy.png({ output: "blob-promise" })` on it.
+- **CSV**: `csv.ts`'s `nodesToCsv` formats whatever node list the caller passes —
+  `NetworkGraphSection` passes the currently filtered/sampled list, so the
+  export matches what's on screen, not the unfiltered full set.
+- **PDF**: `pdfReport.ts`'s `buildPdfReport` walks a list of DOM refs
+  (`AnalysisResultPage` holds one per section), screenshots each with
+  `html2canvas`, and lays them out one per page with `jsPDF`. Both libraries
+  are dynamically imported inside the function — they land in their own build
+  chunks and never touch the initial bundle (PERF-05).
+- jsPDF is pinned to 4.x, not 2.x — 2.x's `dompurify` dependency carries a
+  critical CVE (unrelated to the `.html()` feature this app never calls, but
+  `npm audit`/SEC-03 flags it regardless).
 
 ## Routes
 

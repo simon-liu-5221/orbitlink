@@ -47,7 +47,7 @@ commit: feat(AN-01): add multi-resolution louvain detection
 | PR-08 | 專案搜尋與篩選 | draft |
 | PR-09 | 專案備註 | draft |
 | PR-10 | 檢視網路圖 | done |
-| PR-11 | 匯出圖形（PNG / PDF / CSV） | draft |
+| PR-11 | 匯出圖形（PNG / PDF / CSV） | done |
 | PR-12 | 提交回饋與評分 | draft |
 | PR-13 | 分析結果圖表（情緒分布 / 時間走勢 / 參與度散點圖） | done |
 

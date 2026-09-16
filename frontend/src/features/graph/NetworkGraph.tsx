@@ -1,4 +1,4 @@
-import type { ElementDefinition } from "cytoscape";
+import type { Core, ElementDefinition } from "cytoscape";
 import cytoscape from "cytoscape";
 import { useEffect, useRef } from "react";
 
@@ -14,10 +14,13 @@ export function NetworkGraph({
   nodes,
   edges,
   onSelectNode,
+  onCyReady,
 }: {
   nodes: GraphNode[];
   edges: GraphEdge[];
   onSelectNode: (pseudonym: string) => void;
+  /** Hands the live Cytoscape instance up (PR-11: "export image" needs cy.png()). */
+  onCyReady?: (cy: Core | null) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -76,8 +79,15 @@ export function NetworkGraph({
       onSelectNode(event.target.id());
     });
 
-    return () => cy.destroy();
-  }, [nodes, edges, onSelectNode]);
+    onCyReady?.(cy);
+
+    return () => {
+      onCyReady?.(null);
+      cy.destroy();
+    };
+    // onCyReady and onSelectNode are expected to be stable (wrapped in
+    // useCallback by the caller); only nodes/edges should re-create the graph.
+  }, [nodes, edges, onSelectNode, onCyReady]);
 
   return (
     <div
