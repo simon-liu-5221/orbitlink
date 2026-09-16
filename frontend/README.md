@@ -53,6 +53,8 @@ src/
                 reachable from AppShell on every page (PR-12)
     admin/      AdminUsersPage, AdminFeedbackPage, AdminNav, api.ts —
                 gated by RequireAdmin (AD-01/AD-02)
+    history/    HistorySection, HistoryTrendChart, HistoryComparisonTable,
+                historyData.ts — pure trend/comparison builders (AN-06 phase 1)
     health/     the M0 status widget, now at /status
   test/         utils.tsx — renderWithProviders, jsonResponse
 ```
@@ -87,6 +89,25 @@ Sentiment distribution and the sentiment-over-time trend need no new backend
 call at all — both already live in `AnalysisOut.sentiment_summary` (AN-03). The
 engagement scatter reuses PR-10's `GET /analyses/{id}/graph` query (same
 TanStack Query cache key as the network graph, so opening both costs one fetch).
+
+## History trends (AN-06 phase 1)
+
+`HistorySection` lives on `ProjectDetailPage` (comparisons are always within one
+project — see the spec's out-of-scope list) and lazy-loads for the same
+PERF-05 reason as the other Recharts sections. It fetches
+`GET /projects/{id}/analyses` (oldest first) and hands the result to three
+pure builders in `historyData.ts`:
+
+- `buildSentimentTrend` / `buildParticipantsTrend` both keep `insufficient_data`
+  rows — participant counts and the derived sentiment index stay meaningful
+  even when the graph itself was too sparse to build.
+- `buildCommunityTrend` drops `insufficient_data` rows — a community count from
+  too few nodes isn't a real number.
+- `hasEnoughHistory` gates the whole section on ≥ 2 analyses; with 0 or 1, the
+  UI shows a message instead of a single meaningless point.
+
+Phase 2 (linear-regression extrapolation + leave-one-out MAE, gated on ≥ 5
+analyses) is a separate, later PR — see `specs/analysis/AN-06-history-trends.md`.
 
 ## Export (PR-11)
 

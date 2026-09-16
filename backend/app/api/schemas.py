@@ -249,3 +249,18 @@ class AdminFeedbackOut(ORMModel):
     #: in the frontend — who left this is the whole point of reading it.
     user_email: str
     username: str
+
+
+# --- history trends (AN-06 phase 1) -------------------------------------
+
+
+class AnalysisHistoryOut(BaseModel):
+    id: uuid.UUID
+    created_at: datetime
+    node_count: int
+    community_count: int
+    insufficient_data: bool
+    #: (positive% - negative%) / 100 from sentiment_summary.distribution — an
+    #: approximation of overall sentiment, not a recomputed mean of raw scores
+    #: (AN-06 implementation note: zero extra queries against comments/nodes).
+    sentiment_index: float | None

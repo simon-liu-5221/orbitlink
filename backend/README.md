@@ -25,6 +25,7 @@ POST   /api/v1/projects/{id}/archive          soft-archive (reversible, hidden f
 POST   /api/v1/projects/{id}/unarchive        restore
 DELETE /api/v1/projects/{id}                  permanent; cascades; 409 if a job is running
 GET    /api/v1/projects/{id}/jobs             this project's analysis-job history
+GET    /api/v1/projects/{id}/analyses         every completed analysis, oldest first (trend charts, AN-06)
 POST   /api/v1/projects/{id}/analyses         -> 202 { job_id }   (start an analysis)
 GET    /api/v1/jobs/{job_id}                  poll status + progress
 POST   /api/v1/jobs/{job_id}/cancel           cancel a running job
