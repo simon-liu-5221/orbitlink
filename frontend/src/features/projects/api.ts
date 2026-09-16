@@ -6,6 +6,7 @@ export type Project = Schemas["ProjectOut"];
 export type Job = Schemas["JobStatusOut"];
 export type Analysis = Schemas["AnalysisOut"];
 export type AnalysisGraph = Schemas["AnalysisGraphOut"];
+export type AnalysisHistoryEntry = Schemas["AnalysisHistoryOut"];
 
 export interface ListProjectsParams {
   q?: string;
@@ -42,6 +43,9 @@ export const projectsApi = {
     apiRequest<void>(`/api/v1/projects/${id}`, { method: "DELETE" }),
 
   jobs: (id: string) => apiRequest<Job[]>(`/api/v1/projects/${id}/jobs`),
+
+  analysisHistory: (id: string) =>
+    apiRequest<AnalysisHistoryEntry[]>(`/api/v1/projects/${id}/analyses`),
 
   startAnalysis: (projectId: string, body: Schemas["AnalysisCreate"]) =>
     apiRequest<Schemas["JobAccepted"]>(

@@ -1,5 +1,5 @@
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -10,6 +10,13 @@ import { Button, FormError, Spinner, TextField } from "@/components/ui";
 import { projectsApi } from "./api";
 import { JobProgress } from "./JobProgress";
 import { isLive } from "./jobStatus";
+
+// Recharts is heavy (PERF-05) — only fetch it once someone opens history.
+const HistorySection = lazy(() =>
+  import("@/features/history/HistorySection").then((m) => ({
+    default: m.HistorySection,
+  })),
+);
 
 export function ProjectDetailPage() {
   const { projectId = "" } = useParams();
@@ -159,6 +166,21 @@ export function ProjectDetailPage() {
               No analyses yet. Paste a link above to run the first one.
             </p>
           )}
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            History trends
+          </h2>
+          <Suspense
+            fallback={
+              <div className="flex justify-center p-8 text-slate-400">
+                <Spinner />
+              </div>
+            }
+          >
+            <HistorySection projectId={projectId} />
+          </Suspense>
         </section>
       </div>
     </AppShell>

@@ -269,7 +269,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List Project Analysis History
+         * @description Every completed analysis for this project, oldest first — the order a
+         *     trend chart wants, unlike ``/jobs`` (newest first, a recent-activity view).
+         */
+        get: operations["list_project_analysis_history_api_v1_projects__project_id__analyses_get"];
         put?: never;
         /** Start Analysis */
         post: operations["start_analysis_api_v1_projects__project_id__analyses_post"];
@@ -507,6 +512,27 @@ export interface components {
             node_count: number;
             /** Edge Count */
             edge_count: number;
+        };
+        /** AnalysisHistoryOut */
+        AnalysisHistoryOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Node Count */
+            node_count: number;
+            /** Community Count */
+            community_count: number;
+            /** Insufficient Data */
+            insufficient_data: boolean;
+            /** Sentiment Index */
+            sentiment_index: number | null;
         };
         /** AnalysisOut */
         AnalysisOut: {
@@ -1390,6 +1416,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobStatusOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_project_analysis_history_api_v1_projects__project_id__analyses_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysisHistoryOut"][];
                 };
             };
             /** @description Validation Error */

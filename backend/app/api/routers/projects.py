@@ -1,7 +1,8 @@
 """Project endpoints (spec PR-07).
 
 Create / list / search / rename / archive / unarchive / delete, plus the job
-history the frontend project-detail page renders.
+history the frontend project-detail page renders and the analysis history
+behind the AN-06 trend charts.
 
 Every route that names a project id goes through :func:`_owned_project`, which
 answers 403 identically whether the project belongs to someone else or does not
@@ -12,15 +13,21 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 
 from app.api.deps import CurrentUser, DbSession
-from app.api.schemas import JobStatusOut, ProjectCreate, ProjectOut, ProjectRename
+from app.api.schemas import (
+    AnalysisHistoryOut,
+    JobStatusOut,
+    ProjectCreate,
+    ProjectOut,
+    ProjectRename,
+)
 from app.api.search import escape_like
-from app.db.models import AnalysisJob, Project, User
+from app.db.models import Analysis, AnalysisJob, Project, User
 from app.jobs.state_machine import TERMINAL
 
 router = APIRouter(prefix="/api/v1/projects", tags=["projects"])
@@ -130,3 +137,42 @@ def list_project_jobs(
         .order_by(AnalysisJob.created_at.desc())
     ).all()
     return [JobStatusOut.from_job(job) for job in jobs]
+
+
+def _sentiment_index(summary: dict[str, Any]) -> float | None:
+    """``(positive% - negative%) / 100`` from AN-03's distribution — an
+    approximation, not a recomputed mean of raw comment scores (AN-06)."""
+    distribution = summary.get("distribution")
+    if not isinstance(distribution, dict):
+        return None
+    positive = distribution.get("positive")
+    negative = distribution.get("negative")
+    if not isinstance(positive, int | float) or not isinstance(negative, int | float):
+        return None
+    return (positive - negative) / 100
+
+
+@router.get("/{project_id}/analyses", response_model=list[AnalysisHistoryOut])
+def list_project_analysis_history(
+    project_id: uuid.UUID, db: DbSession, user: CurrentUser
+) -> list[AnalysisHistoryOut]:
+    """Every completed analysis for this project, oldest first — the order a
+    trend chart wants, unlike ``/jobs`` (newest first, a recent-activity view).
+    """
+    project = _owned_project(db, project_id, user)
+    analyses = db.scalars(
+        select(Analysis)
+        .where(Analysis.project_id == project.id)
+        .order_by(Analysis.created_at.asc())
+    ).all()
+    return [
+        AnalysisHistoryOut(
+            id=a.id,
+            created_at=a.created_at,
+            node_count=a.node_count,
+            community_count=a.community_count,
+            insufficient_data=a.insufficient_data,
+            sentiment_index=_sentiment_index(a.sentiment_summary),
+        )
+        for a in analyses
+    ]
