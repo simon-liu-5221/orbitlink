@@ -54,7 +54,8 @@ src/
     admin/      AdminUsersPage, AdminFeedbackPage, AdminNav, api.ts —
                 gated by RequireAdmin (AD-01/AD-02)
     history/    HistorySection, HistoryTrendChart, HistoryComparisonTable,
-                historyData.ts — pure trend/comparison builders (AN-06 phase 1)
+                ForecastSection, historyData.ts / forecastData.ts — pure
+                trend/comparison/forecast-view builders (AN-06)
     health/     the M0 status widget, now at /status
   test/         utils.tsx — renderWithProviders, jsonResponse
 ```
@@ -90,7 +91,7 @@ call at all — both already live in `AnalysisOut.sentiment_summary` (AN-03). Th
 engagement scatter reuses PR-10's `GET /analyses/{id}/graph` query (same
 TanStack Query cache key as the network graph, so opening both costs one fetch).
 
-## History trends (AN-06 phase 1)
+## History trends (AN-06)
 
 `HistorySection` lives on `ProjectDetailPage` (comparisons are always within one
 project — see the spec's out-of-scope list) and lazy-loads for the same
@@ -106,8 +107,17 @@ pure builders in `historyData.ts`:
 - `hasEnoughHistory` gates the whole section on ≥ 2 analyses; with 0 or 1, the
   UI shows a message instead of a single meaningless point.
 
-Phase 2 (linear-regression extrapolation + leave-one-out MAE, gated on ≥ 5
-analyses) is a separate, later PR — see `specs/analysis/AN-06-history-trends.md`.
+### Forecast (AN-06 phase 2)
+
+`ForecastSection` (nested inside `HistorySection`) fetches
+`GET /projects/{id}/analyses/forecast` and renders one card per headline
+metric via the pure `buildForecastViews` (`forecastData.ts`). The math itself
+(linear regression + leave-one-out MAE) lives entirely on the backend in
+`app/analysis/forecast.py`, gated independently per metric — a metric with
+fewer than 5 usable points shows "need N more analyses" instead of a number,
+and the card always carries a fixed disclaimer that this is an extrapolated
+trend line, not a machine-learning model (AC-12) — see
+`specs/analysis/AN-06-history-trends.md`.
 
 ## Export (PR-11)
 

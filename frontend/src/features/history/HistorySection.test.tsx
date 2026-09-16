@@ -5,9 +5,33 @@ import { expect, test, vi } from "vitest";
 import { HistorySection } from "./HistorySection";
 
 const analysisHistory = vi.fn();
+const analysisForecast = vi.fn().mockResolvedValue({
+  required_history: 5,
+  sentiment: {
+    available: false,
+    predicted_next: null,
+    mae: null,
+    points_used: 0,
+  },
+  participants: {
+    available: false,
+    predicted_next: null,
+    mae: null,
+    points_used: 0,
+  },
+  communities: {
+    available: false,
+    predicted_next: null,
+    mae: null,
+    points_used: 0,
+  },
+});
 
 vi.mock("@/features/projects/api", () => ({
-  projectsApi: { analysisHistory: (id: string) => analysisHistory(id) },
+  projectsApi: {
+    analysisHistory: (id: string) => analysisHistory(id),
+    analysisForecast: (id: string) => analysisForecast(id),
+  },
 }));
 
 function renderWithClient() {
@@ -73,4 +97,7 @@ test("2+ analyses renders the three trend charts and the comparison table", asyn
   expect(screen.getByTestId("history-trend-Participants")).toBeInTheDocument();
   expect(screen.getByTestId("history-trend-Communities")).toBeInTheDocument();
   expect(screen.getAllByRole("row")).toHaveLength(3);
+  await waitFor(() =>
+    expect(screen.getByTestId("forecast-sentiment")).toBeInTheDocument(),
+  );
 });

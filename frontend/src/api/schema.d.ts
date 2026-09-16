@@ -269,15 +269,35 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * List Project Analysis History
-         * @description Every completed analysis for this project, oldest first — the order a
-         *     trend chart wants, unlike ``/jobs`` (newest first, a recent-activity view).
-         */
+        /** List Project Analysis History */
         get: operations["list_project_analysis_history_api_v1_projects__project_id__analyses_get"];
         put?: never;
         /** Start Analysis */
         post: operations["start_analysis_api_v1_projects__project_id__analyses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/analyses/forecast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Project Analysis Forecast
+         * @description Linear-regression extrapolation for the three headline metrics (AN-06
+         *     phase 2). Each metric is gated on its own usable point count: a community
+         *     count from an ``insufficient_data`` analysis isn't a real number, so those
+         *     rows are dropped from that series the same way the phase-1 trend charts
+         *     drop them — but they still count toward the participants/sentiment series.
+         */
+        get: operations["get_project_analysis_forecast_api_v1_projects__project_id__analyses_forecast_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -501,6 +521,14 @@ export interface components {
             max_comments?: number | null;
             /** Channel Video Count */
             channel_video_count?: number | null;
+        };
+        /** AnalysisForecastOut */
+        AnalysisForecastOut: {
+            /** Required History */
+            required_history: number;
+            sentiment: components["schemas"]["MetricForecastOut"];
+            participants: components["schemas"]["MetricForecastOut"];
+            communities: components["schemas"]["MetricForecastOut"];
         };
         /** AnalysisGraphOut */
         AnalysisGraphOut: {
@@ -738,6 +766,17 @@ export interface components {
         MessageResponse: {
             /** Message */
             message: string;
+        };
+        /** MetricForecastOut */
+        MetricForecastOut: {
+            /** Available */
+            available: boolean;
+            /** Predicted Next */
+            predicted_next: number | null;
+            /** Mae */
+            mae: number | null;
+            /** Points Used */
+            points_used: number;
         };
         /** NodeOut */
         NodeOut: {
@@ -1482,6 +1521,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_project_analysis_forecast_api_v1_projects__project_id__analyses_forecast_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysisForecastOut"];
                 };
             };
             /** @description Validation Error */

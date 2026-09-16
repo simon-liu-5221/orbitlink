@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Spinner } from "@/components/ui";
 import { projectsApi } from "@/features/projects/api";
 
+import { ForecastSection } from "./ForecastSection";
 import { HistoryComparisonTable } from "./HistoryComparisonTable";
 import {
   buildCommunityTrend,
@@ -73,6 +74,7 @@ export function HistorySection({ projectId }: { projectId: string }) {
         />
       </div>
       <HistoryComparisonTable rows={buildComparisonRows(analyses)} />
+      <ForecastSection projectId={projectId} />
     </div>
   );
 }

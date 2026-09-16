@@ -264,3 +264,23 @@ class AnalysisHistoryOut(BaseModel):
     #: approximation of overall sentiment, not a recomputed mean of raw scores
     #: (AN-06 implementation note: zero extra queries against comments/nodes).
     sentiment_index: float | None
+
+
+# --- history forecast (AN-06 phase 2) -----------------------------------
+
+
+class MetricForecastOut(BaseModel):
+    #: False when there weren't enough usable points for this metric yet.
+    available: bool
+    predicted_next: float | None
+    #: Leave-one-out MAE — a real cross-validation error, not a placeholder.
+    mae: float | None
+    points_used: int
+
+
+class AnalysisForecastOut(BaseModel):
+    #: Points needed before any metric's forecast becomes available.
+    required_history: int
+    sentiment: MetricForecastOut
+    participants: MetricForecastOut
+    communities: MetricForecastOut
