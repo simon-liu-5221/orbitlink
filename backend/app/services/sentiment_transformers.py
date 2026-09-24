@@ -2,9 +2,17 @@
 
 Only imported when ``use_real_sentiment_model`` is on and ``transformers`` +
 ``torch`` are installed. Not covered by CI — its accuracy is evaluated for real
-in M8 (docs/algorithm-validation.md §3).
+in M8 (docs/algorithm-validation.md §3, tooling in scripts/eval_sentiment/).
 
-    uv pip install transformers torch
+    uv pip install torch --index-url https://download.pytorch.org/whl/cpu \
+        --extra-index-url https://pypi.org/simple \
+        "transformers==4.46.3" "tokenizers>=0.20,<0.21" protobuf sentencepiece
+
+M8 note: the latest ``transformers`` (5.x, as of writing) fails to load this
+checkpoint's tokenizer — it tries to convert it via ``tiktoken`` instead of
+``sentencepiece`` and errors out even with both libraries installed. 4.46.3 is
+the last version confirmed to load this specific model cleanly; revisit the
+pin next time this is touched.
 """
 
 from __future__ import annotations

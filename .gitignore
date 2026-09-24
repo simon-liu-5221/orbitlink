@@ -36,3 +36,8 @@ backend/openapi.json
 
 # Load test — generated per run, carries a live access token
 loadtest/seed-data.json
+
+# Sentiment eval — the full unsampled fetch, easily regenerated; the sampled
+# subset + labels + results ARE committed (they're the evidence behind
+# docs/algorithm-validation.md's numbers).
+backend/scripts/eval_sentiment/data/raw_comments.json

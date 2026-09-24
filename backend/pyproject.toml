@@ -29,7 +29,9 @@ dependencies = [
 # The real sentiment/toxicity models (ADR-0004) need `transformers` + `torch`.
 # Not declared here — their lock/CUDA footprint is large and they are only
 # evaluated for real in M8. Enable with `use_real_sentiment_model=true` after
-# `uv pip install transformers torch` (decision B1).
+# installing them (decision B1) — see app/services/sentiment_transformers.py
+# for the exact pinned versions (the latest transformers, as of writing,
+# fails to load this checkpoint's tokenizer).
 
 [dependency-groups]
 dev = [
