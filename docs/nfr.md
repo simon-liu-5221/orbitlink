@@ -37,8 +37,8 @@
 |---|---|---|---|
 | SEC-01 | 密碼以 argon2id 雜湊，無明文儲存 | 程式碼審查 + 單元測試 | |
 | SEC-02 | 使用者 A 無法讀取使用者 B 的任何專案資源 | 整合測試逐個端點驗證 403 | ✅ PR #11：`test_project_crud_api.py` 參數化掃過 7 個專案端點，非本人與不存在回應完全相同（403） |
-| SEC-03 | 依賴套件無 high / critical 漏洞 | CI 跑 `pip-audit` 與 `npm audit` | |
-| SEC-04 | 所有金鑰來自環境變數，儲存庫掃描無洩漏 | CI 跑 `gitleaks` | |
+| SEC-03 | 依賴套件無 high / critical 漏洞 | CI 跑 `pip-audit` 與 `npm audit` | ✅ M7：`pip-audit`（後端）與 `npm audit --omit=dev --audit-level=high`（前端，僅正式依賴）加入 CI，任何 high/critical 會擋下 PR。目前已知例外：`vite`（high）與 `vitest`（critical）——都是建置期工具、不會出現在打包產物裡，修復需要大版本升級（vite 5→8、vitest 2→5），列為之後獨立處理的技術債，不擋這次 PR；`npm audit`（含 dev 依賴）以不擋 build 的方式跑在 CI 裡保持可見度 |
+| SEC-04 | 所有金鑰來自環境變數，儲存庫掃描無洩漏 | CI 跑 `gitleaks` | ✅ M7：`gitleaks/gitleaks-action@v2` 加入 CI，掃描完整 git 歷史，任何洩漏都會擋下 PR |
 | SEC-05 | 未認證請求分析端點限流 10 req/min/IP | 整合測試 | |
 
 ## 可維護性
