@@ -123,12 +123,14 @@
 
 - [ ] k6 負載測試，填完 `docs/nfr.md` 的實測欄位
 - [x] `pip-audit`、`npm audit`、`gitleaks` 加入 CI — SEC-03/SEC-04；`npm audit` 的 high/critical 閘門只擋正式依賴（`--omit=dev`），因為目前僅有的 high/critical 是 vite/vitest 這種建置期工具，修復要大版本升級，列在下面單獨追蹤，不擋這個 PR
-- [ ] 限流、結構化日誌、Sentry
-- [ ] 錯誤狀態盤點，消除所有裸露 500
+- [x] 限流、結構化日誌、Sentry — 限流在 M2/M3 已完成（`rate_limiter`，SEC-05）；結構化日誌加上 request-id 關聯（`app/core/request_context.py` + `JsonFormatter`）；Sentry 決定暫緩，見下方說明
+- [x] 錯誤狀態盤點，消除所有裸露 500 — 後端全域 `Exception` handler + `X-Request-Id`（UX-02），前端頂層 `ErrorBoundary`
 - [ ] Lighthouse CI
 - [ ]（技術債，非本週範圍）`vite` 5→8、`vitest` 2→5 大版本升級，清掉 dev 依賴的 high/critical 漏洞——需要獨立 PR 評估 breaking change 影響
 
 **驗收**：`docs/nfr.md` 沒有空白的實測欄位，未達標的項目誠實標記並說明原因。
+
+> Sentry 決定暫緩：這個階段沒有真實使用者流量，導入需要申請帳號、拿 DSN、當成 secret 管理——一個沒有事件可看的外部依賴。結構化 JSON 日誌 + request-id 關聯已經能滿足「出事時能查」的需求，真的遇到需要遠端追蹤的事故再花一小時接上去。
 
 ---
 

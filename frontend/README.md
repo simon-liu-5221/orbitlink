@@ -37,7 +37,7 @@ keeps you signed in.
 src/
   api/          client.ts (fetch wrapper), schema.d.ts (generated)
   lib/          password.ts — client mirror of the GU-01 policy
-  components/   ui.tsx (Button/TextField/…), AppShell.tsx
+  components/   ui.tsx (Button/TextField/…), AppShell.tsx, ErrorBoundary.tsx
   features/
     auth/       store, api, session, RequireAuth, and the 5 auth pages
     projects/   api, ProjectsPage, ProjectDetailPage, JobProgress,
@@ -136,6 +136,17 @@ Everything is client-side — no export endpoint exists on the backend.
 - jsPDF is pinned to 4.x, not 2.x — 2.x's `dompurify` dependency carries a
   critical CVE (unrelated to the `.html()` feature this app never calls, but
   `npm audit`/SEC-03 flags it regardless).
+
+## Error handling (M7 / UX-02)
+
+Every page already handles its own known error states (a query's `.isError`
+renders a specific message — "that project doesn't exist," "wrong
+credentials," etc.). `ErrorBoundary` (wrapping `<App />` in `main.tsx`) is the
+backstop for everything else: a genuinely unexpected render bug shows "reload"
+instead of a blank white screen. `ApiError` now carries an optional
+`requestId`, read off the backend's `X-Request-Id` response header — when the
+boundary catches an `ApiError` that has one, it's shown so the user has
+something concrete to hand support.
 
 ## Admin (AD-01 / AD-02)
 

@@ -88,6 +88,27 @@ test("structured error detail becomes ApiError.code / .problems", async () => {
   expect((err as ApiError).problems).toHaveLength(2);
 });
 
+test("the X-Request-Id response header becomes ApiError.requestId (M7)", async () => {
+  vi.mocked(fetch).mockResolvedValueOnce(
+    new Response(
+      JSON.stringify({
+        detail: { error_code: "INTERNAL_ERROR", message: "oops" },
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "X-Request-Id": "req-999",
+        },
+      },
+    ),
+  );
+
+  const err = await apiRequest("/api/v1/projects").catch((e: unknown) => e);
+  expect(err).toBeInstanceOf(ApiError);
+  expect((err as ApiError).requestId).toBe("req-999");
+});
+
 test("204 responses resolve to undefined without parsing a body", async () => {
   vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 204 }));
   await expect(

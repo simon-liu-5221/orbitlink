@@ -26,6 +26,12 @@ export class ApiError extends Error {
     readonly code?: string,
     /** Field-level problems, e.g. every unmet password rule (GU-01 AC-4). */
     readonly problems?: string[],
+    /**
+     * Correlation id from the `X-Request-Id` response header (M7) — present
+     * on every response, most useful to show the user on a 500 so they have
+     * something concrete to hand support.
+     */
+    readonly requestId?: string,
   ) {
     super(message);
     this.name = "ApiError";
@@ -83,6 +89,7 @@ function toApiError(
   method: string,
   path: string,
   payload: unknown,
+  requestId?: string,
 ): ApiError {
   const detail = (payload as { detail?: unknown } | null)?.detail;
   if (detail && typeof detail === "object") {
@@ -96,10 +103,18 @@ function toApiError(
       d.message ?? `${method} ${path} failed (${status})`,
       d.error_code,
       d.problems,
+      requestId,
     );
   }
-  if (typeof detail === "string") return new ApiError(status, detail);
-  return new ApiError(status, `${method} ${path} failed (${status})`);
+  if (typeof detail === "string")
+    return new ApiError(status, detail, undefined, undefined, requestId);
+  return new ApiError(
+    status,
+    `${method} ${path} failed (${status})`,
+    undefined,
+    undefined,
+    requestId,
+  );
 }
 
 async function send(
@@ -139,7 +154,15 @@ export async function apiRequest<T>(
   }
 
   const payload = await parseBody(res);
-  if (!res.ok) throw toApiError(res.status, method, path, payload);
+  if (!res.ok) {
+    throw toApiError(
+      res.status,
+      method,
+      path,
+      payload,
+      res.headers.get("x-request-id") ?? undefined,
+    );
+  }
   if (res.status === 204) return undefined as T;
   return payload as T;
 }
