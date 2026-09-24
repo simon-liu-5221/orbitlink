@@ -109,6 +109,25 @@ uv run mypy app
 uv run lint-imports                  # analysis/ layer purity (ADR-0003)
 ```
 
+## Observability & error handling (M7)
+
+Every response carries an `X-Request-Id` header (`app/main.py`'s `observability`
+middleware) — reused from the client if it sent one, generated otherwise. The
+same id tags every structured JSON log line emitted while handling that
+request (`app/core/request_context.py` + `JsonFormatter`), so a single
+request's logs across routers/services/jobs can be grepped out by id alone.
+
+A global `Exception` handler is the last line of defence against a bare 500
+(UX-02): anything not already an `HTTPException` gets logged with its full
+traceback and still returns a structured `{"detail": {"error_code":
+"INTERNAL_ERROR", "message": ..., "request_id": ...}}` body — ordinary
+`HTTPException`s (401/403/404/409/422 etc.) are untouched, since FastAPI
+routes a handler registered on the base `Exception` class through Starlette's
+`ServerErrorMiddleware`, not `ExceptionMiddleware`.
+
+Sentry was considered and deliberately skipped — no live traffic yet to
+justify the external dependency; structured logs are enough for now.
+
 ## Algorithm validation
 
 ```bash
