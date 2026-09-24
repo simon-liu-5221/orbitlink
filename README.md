@@ -57,6 +57,7 @@ docker compose up
 | [`docs/data-ethics.md`](docs/data-ethics.md) | PDPA、資料保留、匿名化 |
 | [`docs/case-study.md`](docs/case-study.md) | 用本工具做的一份真實分析 |
 | [`specs/`](specs/) | 逐條功能規格與驗收條件 |
+| [`loadtest/`](loadtest/) | k6 負載測試（CAP-02、PERF-01），對本機 docker-compose 跑 |
 
 ## 授權
 

@@ -121,7 +121,7 @@
 
 ## M7 — 硬化與量測（第 11 週）
 
-- [ ] k6 負載測試，填完 `docs/nfr.md` 的實測欄位
+- [x] k6 負載測試，填完 `docs/nfr.md` 的實測欄位 — `loadtest/`（seed.py + pageload.js + cleanup.py），對本機 docker-compose 跑，20 VU 全部 6 個端點 p95 遠低於 300ms 門檻，理由見下方說明
 - [x] `pip-audit`、`npm audit`、`gitleaks` 加入 CI — SEC-03/SEC-04；`npm audit` 的 high/critical 閘門只擋正式依賴（`--omit=dev`），因為目前僅有的 high/critical 是 vite/vitest 這種建置期工具，修復要大版本升級，列在下面單獨追蹤，不擋這個 PR
 - [x] 限流、結構化日誌、Sentry — 限流在 M2/M3 已完成（`rate_limiter`，SEC-05）；結構化日誌加上 request-id 關聯（`app/core/request_context.py` + `JsonFormatter`）；Sentry 決定暫緩，見下方說明
 - [x] 錯誤狀態盤點，消除所有裸露 500 — 後端全域 `Exception` handler + `X-Request-Id`（UX-02），前端頂層 `ErrorBoundary`
@@ -131,6 +131,8 @@
 **驗收**：`docs/nfr.md` 沒有空白的實測欄位，未達標的項目誠實標記並說明原因。
 
 > Sentry 決定暫緩：這個階段沒有真實使用者流量，導入需要申請帳號、拿 DSN、當成 secret 管理——一個沒有事件可看的外部依賴。結構化 JSON 日誌 + request-id 關聯已經能滿足「出事時能查」的需求，真的遇到需要遠端追蹤的事故再花一小時接上去。
+
+> k6 負載測試決定跑本機 docker-compose，不是 Render 部署：Render free tier 的冷啟動與共用 CPU 節流已經是 AVAIL-01 的已知限制，混進效能測試只會量到「Render 有多慢」而不是「這個 app 有多慢」，兩者是不同的問題。CAP-02 的「5 個並行分析 job」也是用資料庫裡 5 筆 `analyzing` 狀態的列模擬，不是真的併發跑 YouTube 擷取——真的併發擷取需要 YouTube API 配額且不可重複執行，用「進行中」的資料列造出頁面端點會實際感受到的讀取壓力，才是 CAP-02 真正關心的問題（頁面 API 會不會被拖慢），誠實地在 `loadtest/seed.py` 的 docstring 裡寫清楚這個取捨。
 
 ---
 
