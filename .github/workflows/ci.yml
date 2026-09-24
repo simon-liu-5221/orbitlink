@@ -64,6 +64,13 @@ jobs:
       - name: Import boundaries (analysis layer must stay pure)
         run: uv run lint-imports
 
+      - name: pip-audit (SEC-03 — no known-vulnerable dependencies)
+        # pip-audit doesn't expose a severity field to filter on (unlike npm
+        # audit's --audit-level), so any finding fails here. In practice the
+        # Python dependency tree is small and pinned via uv.lock, so this is
+        # rare noise, not a flood — see docs/nfr.md SEC-03.
+        run: uvx pip-audit -s osv -l --desc
+
       - name: Alembic migrations
         run: uv run alembic upgrade head
 
@@ -98,6 +105,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: npm audit — production deps, fail on high/critical (SEC-03)
+        # Scoped to --omit=dev on purpose: the current high/critical findings
+        # (vite, vitest) are build-time tooling, never shipped to users, and
+        # their fixes are major-version migrations (vite 5->8, vitest 2->5)
+        # too risky to force through a CI gate. Tracked as a follow-up in
+        # docs/roadmap.md instead of silently ignored — see the report-only
+        # step below for their current status.
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: npm audit — full report, dev deps included (visibility only)
+        run: npm audit || true
+
       - name: Typecheck
         run: npm run typecheck
 
@@ -106,3 +125,15 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # gitleaks scans full history, not just the current tree
+
+      - name: Gitleaks (SEC-04 — no committed secrets)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

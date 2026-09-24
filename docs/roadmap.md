@@ -122,10 +122,11 @@
 ## M7 — 硬化與量測（第 11 週）
 
 - [ ] k6 負載測試，填完 `docs/nfr.md` 的實測欄位
-- [ ] `pip-audit`、`npm audit`、`gitleaks` 加入 CI
+- [x] `pip-audit`、`npm audit`、`gitleaks` 加入 CI — SEC-03/SEC-04；`npm audit` 的 high/critical 閘門只擋正式依賴（`--omit=dev`），因為目前僅有的 high/critical 是 vite/vitest 這種建置期工具，修復要大版本升級，列在下面單獨追蹤，不擋這個 PR
 - [ ] 限流、結構化日誌、Sentry
 - [ ] 錯誤狀態盤點，消除所有裸露 500
 - [ ] Lighthouse CI
+- [ ]（技術債，非本週範圍）`vite` 5→8、`vitest` 2→5 大版本升級，清掉 dev 依賴的 high/critical 漏洞——需要獨立 PR 評估 breaking change 影響
 
 **驗收**：`docs/nfr.md` 沒有空白的實測欄位，未達標的項目誠實標記並說明原因。
 
