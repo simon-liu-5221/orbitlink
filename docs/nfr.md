@@ -12,7 +12,7 @@
 | PERF-02 | 1,000 則留言的完整分析 p95 < 45 秒 | worker 端計時，30 次取樣 | |
 | PERF-03 | 10,000 則留言的完整分析 p95 < 6 分鐘 | 同上，10 次取樣 | |
 | PERF-04 | 網路圖在 2,000 節點下互動維持 ≥ 30 fps | Chrome DevTools Performance，記錄拖曳 10 秒 | 待測：需要真實瀏覽器操作，CI 環境做不到，留給 demo 前手動量測 |
-| PERF-05 | 首屏 LCP < 2.5s（Render static site，4G 節流） | Lighthouse CI | |
+| PERF-05 | 首屏 LCP < 2.5s（Render static site，4G 節流） | Lighthouse CI | ✅ M7：`.lighthouserc.json` + GitHub Actions（report-only，還沒有基準線可以擋 PR）。對 build 好的 `frontend/dist` 用 `serve -s` 起本機伺服器，audit `/login` 與 `/status`（唯二不需要登入流程的頁面——沒有寫 Lighthouse 的登入腳本，看不到已登入頁面的數字）。3 次取樣。實際 LCP 數字見這個 PR 的 CI 執行記錄與 `lighthouse-report` artifact |
 | PERF-06 | 情緒推論吞吐 ≥ 80 則/秒（單 CPU worker，batch 32） | 基準測試腳本 | |
 
 ## 容量

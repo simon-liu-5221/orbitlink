@@ -126,6 +126,20 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Lighthouse CI (PERF-05 — report only, not a merge gate yet)
+        # No baseline to assert against yet, so this just records numbers on
+        # every PR (docs/nfr.md/roadmap.md) rather than blocking merges. Only
+        # audits unauthenticated pages (/login, /status) — there's no scripted
+        # login flow for Lighthouse to reach the authenticated project pages.
+        run: npx --yes @lhci/cli@0.14.0 autorun || true
+
+      - name: Upload Lighthouse report
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: frontend/.lighthouseci
+          if-no-files-found: ignore
+
   secrets-scan:
     runs-on: ubuntu-latest
     steps:
