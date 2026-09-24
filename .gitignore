@@ -32,3 +32,6 @@ Thumbs.db
 # Fly
 .fly/
 backend/openapi.json
+
+# Load test — generated per run, carries a live access token
+loadtest/seed-data.json

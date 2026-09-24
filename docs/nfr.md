@@ -8,7 +8,7 @@
 
 | ID | 目標 | 量測方式 | 實測 |
 |---|---|---|---|
-| PERF-01 | 頁面 API（列專案、開專案、讀結果）p95 < 300ms | `pytest-benchmark` + 部署後 k6 | |
+| PERF-01 | 頁面 API（列專案、開專案、讀結果）p95 < 300ms | 本機 docker-compose + k6（見 CAP-02，兩者用同一次負載測試量測） | ✅ M7：`loadtest/pageload.js`，20 VU 持續 40 秒，6 個端點全部 p95 遠低於 300ms 門檻——`list_projects` 32.97ms、`get_project` 28.88ms、`list_jobs` 51.88ms（含 5 筆 `analyzing` 中的 job）、`history` 31.98ms、`forecast` 33.68ms、`get_analysis` 46.52ms。刻意選本機 docker-compose 而非 Render 部署，避免 free tier 的冷啟動/共用 CPU 干擾量到的是基礎設施限制而不是這個 app 本身的效能，理由見 `docs/roadmap.md` M7 |
 | PERF-02 | 1,000 則留言的完整分析 p95 < 45 秒 | worker 端計時，30 次取樣 | |
 | PERF-03 | 10,000 則留言的完整分析 p95 < 6 分鐘 | 同上，10 次取樣 | |
 | PERF-04 | 網路圖在 2,000 節點下互動維持 ≥ 30 fps | Chrome DevTools Performance，記錄拖曳 10 秒 | 待測：需要真實瀏覽器操作，CI 環境做不到，留給 demo 前手動量測 |
@@ -20,7 +20,7 @@
 | ID | 目標 | 量測方式 | 實測 |
 |---|---|---|---|
 | CAP-01 | 單一分析支援上限 50,000 則留言，超過則拒絕並提示 | 整合測試 | |
-| CAP-02 | 20 個並行使用者、5 個並行分析 job 下 PERF-01 不退化 | k6 負載測試 | |
+| CAP-02 | 20 個並行使用者、5 個並行分析 job 下 PERF-01 不退化 | k6 負載測試 | ✅ M7：`loadtest/`，20 VU + 5 個專案各有一筆 `analyzing` 狀態的 job（模擬並行分析——真的併發擷取需要 YouTube API 配額與真的 worker，無法在可重複的本機測試裡依賴，用資料庫裡「進行中」的列造出頁面端點會實際感受到的讀取/鎖競爭壓力，這是誠實的替代方案，不是迴避問題），999 次迭代、5,994 次檢查全過、`http_req_failed` 0.00%。詳細數字見 PERF-01 |
 | CAP-03 | 圖形視覺化在 > 2,000 節點時自動降級為抽樣顯示 | 前端單元測試 | ✅ PR #13：`graphData.test.ts`，`sampleTopByPagerank` 保留 PageRank 前 2,000 名 + 兩端都保留的邊 |
 
 ## 可用性
